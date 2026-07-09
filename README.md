@@ -33,7 +33,7 @@ A personal blog and portfolio website built with **Django 6**, **Tailwind CSS**,
 
 ### 1. Clone the repository and install dependencies
 ```bash
-git clone <repo-url>
+git clone https://github.com/ozodbek-bosimov/personal-site.git
 cd personal-site
 python3 -m venv env
 source env/bin/activate
