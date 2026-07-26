@@ -1,6 +1,5 @@
 import math
 import re
-from io import BytesIO
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -13,15 +12,15 @@ from django.db import models
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
-from PIL import Image
+
+from home.imaging import compress_to_webp, webp_name
 
 
 def _compress_and_rename_image(image_field, max_size=(1000, 1000), quality=80):
-    """Compresses an image field using Pillow to save disk space and bandwidth.
+    """Compress a newly uploaded image field to WebP.
 
-    Converts images to WebP format for superior compression.  Transparent
-    images (RGBA / P with transparency) are kept as WebP with alpha;
-    everything else is converted to RGB first.
+    The actual re-encoding lives in ``home.imaging`` so CKEditor uploads
+    (which never pass through a model field) share exactly the same rules.
     """
     if not image_field:
         return image_field
@@ -30,55 +29,15 @@ def _compress_and_rename_image(image_field, max_size=(1000, 1000), quality=80):
     if getattr(image_field, "_committed", True):
         return image_field
 
-    # Smart check: If the uploaded file is already extremely small (less than 20 KB)
-    # AND its dimensions are within max_size, we avoid re-compressing it.
-    # This prevents huge but low-byte-size images (like simple vector line art) from skipping resize.
-    try:
-        if hasattr(image_field, "size") and image_field.size < 20 * 1024:
-            with Image.open(image_field) as img:
-                if img.width <= max_size[0] and img.height <= max_size[1]:
-                    return image_field
-    except Exception:
-        pass
-
-    try:
-        # Reset file pointer — critical for files that have been partially
-        # read during Django's upload validation / CKEditor processing.
-        if hasattr(image_field, "seek"):
-            image_field.seek(0)
-
-        img = Image.open(image_field)
-        # If the image dimensions are already smaller than the max_size,
-        # we don't upscale or force resize it.
-        if img.width <= max_size[0] and img.height <= max_size[1]:
-            pass
-        else:
-            img.thumbnail(max_size, Image.Resampling.LANCZOS)
-
-        # Decide whether to keep alpha channel
-        has_alpha = img.mode in ("RGBA", "LA") or (
-            img.mode == "P" and "transparency" in img.info
-        )
-        if not has_alpha:
-            img = img.convert("RGB")
-
-        output = BytesIO()
-        img.save(output, format="WEBP", quality=quality, method=4)
-        compressed_size = output.tell()
-        output.seek(0)
-
-        original_name = getattr(image_field, "name", "img") or "img"
-        base_name = original_name.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-        new_name = f"{base_name}.webp"
-
-        return InMemoryUploadedFile(
-            output, "ImageField", new_name, "image/webp", compressed_size, None
-        )
-    except Exception:
-        # Reset pointer so Django can still save the original file
-        if hasattr(image_field, "seek"):
-            image_field.seek(0)
+    result = compress_to_webp(image_field, max_size=max_size, quality=quality)
+    if result is None:
         return image_field
+
+    buffer, compressed_size = result
+    new_name = webp_name(getattr(image_field, "name", "img"))
+    return InMemoryUploadedFile(
+        buffer, "ImageField", new_name, "image/webp", compressed_size, None
+    )
 
 
 class Blog(models.Model):
