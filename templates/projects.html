@@ -20,6 +20,7 @@
 <meta name="twitter:description"
     content="Portfolio and ongoing projects by Ozodbek Bosimov. Showcasing software applications, open-source work, and other personal experiments." />
 <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/banner.jpg' %}" />
+<link rel="stylesheet" href="{% static 'css/projects.css' %}?v={{ STATIC_ASSET_VERSION }}" />
 {% endblock meta %} {% block content %}
 <div class="px-4 sm:px-6 md:px-20 w-full mt-6 md:mt-8 mb-0 reveal">
     <h1 class="text-2xl md:text-3xl font-semibold text-gray-100 tracking-wide mb-4 text-center">
@@ -32,12 +33,64 @@
     {% if projects %} {% for project in projects %}
     <div
         class="blog-list-card glass-card solid-content-card flex flex-col gap-5 p-5 md:p-6 mb-6 overflow-hidden reveal">
-        {% if project.effective_thumbnail %}
-        <div class="blog-list-thumb">
-            <img class="w-full h-full object-cover" src="{{ project.effective_thumbnail }}" alt="{{ project.title }}"
-                loading="lazy" />
+        {% with gallery=project.gallery %}{% if gallery %}
+        {% if gallery|length > 1 %}
+        <div class="project-gallery" data-project-gallery aria-roledescription="carousel"
+            aria-label="{{ project.title }} images">
+            <div class="blog-list-thumb project-gallery__frame">
+                <div class="project-gallery__viewport" data-gallery-viewport tabindex="0" role="group"
+                    aria-label="{{ project.title }} images, use arrow keys to browse">
+                    {% for slide in gallery %}
+                    <figure class="project-gallery__slide" data-gallery-slide role="group"
+                        aria-roledescription="slide" aria-label="{{ forloop.counter }} of {{ gallery|length }}">
+                        <img class="project-gallery__img" src="{{ slide.url }}"
+                            alt="{% if slide.caption %}{{ slide.caption }}{% else %}{{ project.title }} — image {{ forloop.counter }}{% endif %}"
+                            loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" decoding="async"
+                            draggable="false" />
+                        {% if slide.caption %}
+                        <figcaption class="project-gallery__caption">{{ slide.caption }}</figcaption>
+                        {% endif %}
+                    </figure>
+                    {% endfor %}
+                </div>
+
+                {# Inline SVG chevrons: bi-chevron-left/right are missing from the icon font subset #}
+                <button type="button" class="project-gallery__arrow project-gallery__arrow--prev" data-gallery-prev
+                    aria-label="Previous image" tabindex="-1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M14.5 5.5 8 12l6.5 6.5" />
+                    </svg>
+                </button>
+                <button type="button" class="project-gallery__arrow project-gallery__arrow--next" data-gallery-next
+                    aria-label="Next image" tabindex="-1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M9.5 5.5 16 12l-6.5 6.5" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="project-gallery__dots{% if gallery|length > 6 %} project-gallery__dots--compact{% endif %}"
+                data-gallery-dots role="tablist" aria-label="Choose image">
+                {% for slide in gallery %}
+                <button type="button" class="project-gallery__dot{% if forloop.first %} is-active{% endif %}"
+                    data-gallery-dot="{{ forloop.counter0 }}" role="tab"
+                    aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                    aria-label="Go to image {{ forloop.counter }}"><span class="project-gallery__dot-fill"></span></button>
+                {% endfor %}
+            </div>
+
+            <span class="sr-only" aria-live="polite" data-gallery-live></span>
         </div>
-        {% endif %}
+        {% else %}{% with slide=gallery.0 %}
+        <div class="blog-list-thumb">
+            <img class="w-full h-full object-cover" src="{{ slide.url }}"
+                alt="{% if slide.caption %}{{ slide.caption }}{% else %}{{ project.title }}{% endif %}" loading="lazy"
+                draggable="false" />
+        </div>
+        {% endwith %}{% endif %}
+        {% endif %}{% endwith %}
 
         <div class="flex-1 min-w-0">
             <p class="font-bold text-lg text-gray-100 mb-1">

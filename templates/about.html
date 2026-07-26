@@ -62,6 +62,7 @@
             <img
                 src="{{ about_me.effective_profile_image }}"
                 alt="{{ about_me.name }}"
+                draggable="false"
                 class="w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full object-cover border-4 border-cyan-300 shadow-lg"
             />
         </div>
@@ -222,7 +223,7 @@
                         {# Company logo #}
                         <div class="timeline-logo">
                             {% if exp.logo_url %}
-                            <img src="{{ exp.logo_url }}" alt="{{ exp.company }}" width="40" height="40" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <img src="{{ exp.logo_url }}" alt="{{ exp.company }}" width="40" height="40" loading="lazy" draggable="false" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                             <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                                 <rect fill="#38434f" width="128" height="128"/>
                                 <rect fill="#9db3c8" x="48" y="16" width="64" height="112"/>
@@ -307,7 +308,7 @@
                         {# Company logo #}
                         <div class="timeline-logo">
                             {% if exp.logo_url %}
-                            <img src="{{ exp.logo_url }}" alt="{{ exp.company }}" width="40" height="40" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <img src="{{ exp.logo_url }}" alt="{{ exp.company }}" width="40" height="40" loading="lazy" draggable="false" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                             <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" style="display: none;">
                                 <rect fill="#38434f" width="128" height="128"/>
                                 <rect fill="#9db3c8" x="48" y="16" width="64" height="112"/>
@@ -390,6 +391,7 @@
                         <img
                             id="leetcode-stats-img"
                             alt="LeetCode Stats"
+                            draggable="false"
                             class="profile-media__img github-img-hidden"
                         />
                     </div>
@@ -420,6 +422,7 @@
                             <img
                                 id="github-stats-img"
                                 alt="GitHub Stats"
+                                draggable="false"
                                 class="profile-panel__img github-img-hidden"
                                 style="margin-top: 3px;"
                             />
@@ -430,6 +433,7 @@
                             <img
                                 id="github-langs-img"
                                 alt="Top Languages"
+                                draggable="false"
                                 class="profile-panel__img github-img-hidden"
                             />
                         </div>
@@ -440,6 +444,7 @@
                                 <img
                                     id="github-streak-img"
                                     alt="GitHub Streak"
+                                    draggable="false"
                                     class="profile-panel__img github-img-hidden streak-responsive"
                                 />
                             </div>
@@ -477,17 +482,7 @@
                 <div class="flex justify-between items-center mb-2.5">
                     <p class="text-[15px] font-semibold text-gray-200 tracking-wide">{{ skill.name }}</p>
                     <span class="text-xs font-medium text-gray-400 capitalize">
-                        {% if skill.percentage <= 19 %}
-                            Familiar
-                        {% elif skill.percentage <= 39 %}
-                            Basic
-                        {% elif skill.percentage <= 69 %}
-                            Working knowledge
-                        {% elif skill.percentage <= 89 %}
-                            Advanced
-                        {% else %}
-                            Expert
-                        {% endif %}
+                        {{ skill.level_display }}
                     </span>
                 </div>
                 <div class="relative w-full rounded-full overflow-hidden" style="background-color: rgba(55,65,81,0.6); height: 4px;">

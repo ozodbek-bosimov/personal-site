@@ -1546,3 +1546,17 @@ nav a:not(.btn-hero-primary):active,
         max-width: none;
     }
 }
+
+/* ── Rasmlarni sudrab olishni (drag) o'chirish ───────────────────
+   `-webkit-user-drag` Chrome/Safari uchun ishlaydi; Firefox uni
+   qo'llab-quvvatlamaydi, shuning uchun base.js'da `dragstart`
+   hodisasi ham bloklanadi. */
+img,
+picture,
+svg {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    user-drag: none;
+    -webkit-touch-callout: none;
+}

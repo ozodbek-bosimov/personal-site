@@ -239,6 +239,16 @@ class AboutMe(models.Model):
 class Skill(models.Model):
     """Skills with percentage proficiency"""
 
+    # Upper bound of each proficiency band -> label. Single source of truth
+    # for the About page badge, the admin column and the admin filter.
+    LEVEL_BANDS = (
+        (19, "Familiar"),
+        (39, "Basic"),
+        (69, "Working knowledge"),
+        (89, "Advanced"),
+        (100, "Expert"),
+    )
+
     name = models.CharField(max_length=100)
     percentage = models.IntegerField(
         validators=[MinValueValidator(0), MaxValueValidator(100)],
@@ -249,7 +259,15 @@ class Skill(models.Model):
     )
 
     def __str__(self):
-        return f"{self.name} - {self.percentage}%"
+        return f"{self.name} — {self.percentage}%"
+
+    @property
+    def level_display(self):
+        """Proficiency band label, e.g. 'Advanced'."""
+        for ceiling, label in self.LEVEL_BANDS:
+            if (self.percentage or 0) <= ceiling:
+                return label
+        return self.LEVEL_BANDS[-1][1]
 
     class Meta:
         ordering = ["order", "name"]
@@ -516,16 +534,6 @@ class Project(models.Model):
         default=False,
         help_text="Check if this project is still in progress.",
     )
-    thumbnail_img = models.ImageField(
-        null=True,
-        blank=True,
-        upload_to="projects/",
-        help_text="Upload a thumbnail image (preferred over URL)",
-    )
-    thumbnail_url = models.URLField(
-        blank=True,
-        help_text="CDN URL for project thumbnail (used if no image is uploaded)",
-    )
     github_link = models.URLField(blank=True)
     demo_link = models.URLField(blank=True)
     technologies = models.CharField(
@@ -569,13 +577,6 @@ class Project(models.Model):
             end = "Present"
         return f"{start} – {end}"
 
-    @property
-    def effective_thumbnail(self):
-        """Return the URL to use for the thumbnail, preferring the uploaded image."""
-        if self.thumbnail_img and hasattr(self.thumbnail_img, "url"):
-            return self.thumbnail_img.url
-        return self.thumbnail_url or ""
-
     def get_technologies_list(self):
         """Return technologies as a list"""
         if self.technologies:
@@ -584,14 +585,119 @@ class Project(models.Model):
             ]
         return []
 
+    @property
+    def gallery(self):
+        """Slides for the project card carousel, in admin order.
+
+        Returns a list of ``{"url", "caption"}`` dicts.  Images live in a
+        single ProjectImage list — the first one doubles as the cover /
+        social-preview image.  Duplicate URLs are dropped.
+        """
+        slides = []
+        seen = set()
+
+        for image in self.images.all():
+            url = image.effective_image
+            if url and url not in seen:
+                slides.append({"url": url, "caption": image.caption})
+                seen.add(url)
+
+        return slides
+
+    @property
+    def effective_thumbnail(self):
+        """URL of the cover image, i.e. the first gallery slide."""
+        slides = self.gallery
+        return slides[0]["url"] if slides else ""
+
     class Meta:
         ordering = ["order", "-created_at"]
 
-    def save(self, *args, **kwargs):
-        if self.thumbnail_img:
-            self.thumbnail_img = _compress_and_rename_image(
-                self.thumbnail_img, max_size=(1280, 720), quality=90
+
+class ProjectImage(models.Model):
+    """One image of a project's gallery.
+
+    This is the only place project images live: the first row (lowest
+    ``order``) is the cover shown on the card and in social previews, and
+    every row becomes a slide in the card carousel.  Like every other image
+    on the site, an entry can either be an uploaded file or an external URL.
+    """
+
+    project = models.ForeignKey(
+        Project,
+        related_name="images",
+        on_delete=models.CASCADE,
+    )
+    image = models.ImageField(
+        null=True,
+        blank=True,
+        upload_to="projects/",
+        help_text="Upload an image (preferred over URL)",
+    )
+    image_url = models.URLField(
+        blank=True,
+        help_text="CDN URL for the image (used if no file is uploaded)",
+    )
+    caption = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Optional caption, also used as the image alt text",
+    )
+    order = models.IntegerField(
+        default=0,
+        help_text="Lower numbers first. Leave at 0 to append after the existing images.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+        verbose_name = "Project image"
+        verbose_name_plural = "Project images"
+
+    def __str__(self):
+        """Label shown as the row heading in the admin inline.
+
+        Deliberately free of primary keys: '#22' means nothing to whoever
+        is editing the page. Falls back to the file name, then the URL's
+        last segment.
+        """
+        if self.caption:
+            return self.caption
+
+        source = self.image.name if self.image else (self.image_url or "")
+        filename = source.split("?")[0].rstrip("/").rsplit("/", 1)[-1]
+        return filename or "Image"
+
+    @property
+    def effective_image(self):
+        """Return the URL to use, preferring the uploaded file."""
+        if self.image and hasattr(self.image, "url"):
+            return self.image.url
+        return self.image_url or ""
+
+    def clean(self):
+        if not self.image and not self.image_url:
+            raise ValidationError(
+                "Provide either an uploaded image or an image URL for this slide."
             )
+
+    def save(self, *args, **kwargs):
+        if self.image:
+            self.image = _compress_and_rename_image(
+                self.image, max_size=(1600, 900), quality=90
+            )
+
+        # New rows left at the default land after the existing images
+        # instead of piling up at position 0.
+        if self._state.adding and not self.order and self.project_id:
+            last = (
+                ProjectImage.objects.filter(project_id=self.project_id)
+                .order_by("-order")
+                .values_list("order", flat=True)
+                .first()
+            )
+            self.order = (last or 0) + 1
+
         super().save(*args, **kwargs)
 
 
@@ -724,9 +830,15 @@ def invalidate_blog_cache_on_save(sender, instance, **kwargs):
     )
 
 
-@receiver(pre_save, sender=Project)
-def cleanup_project_thumbnail_on_save(sender, instance, **kwargs):
-    """Delete old thumbnail when Project thumbnail is changed."""
+@receiver([post_save, post_delete], sender=Project)
+def invalidate_project_cache(sender, instance, **kwargs):
+    """Invalidate cache when a Project is created, updated, or deleted."""
+    cache.delete_many(["total_projects", "all_projects"])
+
+
+@receiver(pre_save, sender=ProjectImage)
+def cleanup_project_image_on_save(sender, instance, **kwargs):
+    """Delete the old gallery file when a slide's image is replaced."""
     if not instance.pk:
         return
     try:
@@ -734,32 +846,31 @@ def cleanup_project_thumbnail_on_save(sender, instance, **kwargs):
     except sender.DoesNotExist:
         return
 
-    old_thumb = old.thumbnail_img.name if old.thumbnail_img else None
-    new_thumb = instance.thumbnail_img.name if instance.thumbnail_img else None
-
-    if old_thumb and old_thumb != new_thumb:
+    old_name = old.image.name if old.image else None
+    new_name = instance.image.name if instance.image else None
+    if old_name and old_name != new_name:
         try:
-            if default_storage.exists(old_thumb):
-                default_storage.delete(old_thumb)
+            if default_storage.exists(old_name):
+                default_storage.delete(old_name)
         except Exception:
             pass
 
 
-@receiver(post_delete, sender=Project)
-def cleanup_project_thumbnail_on_delete(sender, instance, **kwargs):
-    """Delete thumbnail file when Project is deleted."""
-    if instance.thumbnail_img and instance.thumbnail_img.name:
+@receiver(post_delete, sender=ProjectImage)
+def cleanup_project_image_on_delete(sender, instance, **kwargs):
+    """Delete the gallery file when a slide is removed."""
+    if instance.image and instance.image.name:
         try:
-            if default_storage.exists(instance.thumbnail_img.name):
-                default_storage.delete(instance.thumbnail_img.name)
+            if default_storage.exists(instance.image.name):
+                default_storage.delete(instance.image.name)
         except Exception:
             pass
 
 
-@receiver([post_save, post_delete], sender=Project)
-def invalidate_project_cache(sender, instance, **kwargs):
-    """Invalidate cache when a Project is created, updated, or deleted."""
-    cache.delete_many(["total_projects", "all_projects"])
+@receiver([post_save, post_delete], sender=ProjectImage)
+def invalidate_project_cache_on_image_change(sender, instance, **kwargs):
+    """The cached project list carries prefetched gallery rows — refresh it."""
+    cache.delete("all_projects")
 
 
 @receiver([post_save, post_delete], sender=Skill)

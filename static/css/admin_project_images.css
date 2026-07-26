@@ -1,0 +1,150 @@
+/* ══════════════════════════════════════════════════════════════════
+   Project "Images" inline — keep it inside the viewport.
+
+   Django sizes admin widgets in em: .vURLField is 30em and .vTextField
+   is 20em.  Together with the preview column and a file field holding an
+   unbreakable long filename, the tabular inline grew wider than the
+   content area and had to be scrolled sideways.  Here the table is laid
+   out proportionally instead, so every column always fits.
+   ══════════════════════════════════════════════════════════════════ */
+
+#images-group table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+/* Column budget — percentages resolve against the table, so the row
+   reflows with the window instead of overflowing it. */
+#images-group .column-preview {
+    width: 9rem;
+}
+
+#images-group .column-image {
+    width: 28%;
+}
+
+#images-group .column-image_url {
+    width: 24%;
+}
+
+#images-group .column-caption {
+    width: 20%;
+}
+
+#images-group .column-order {
+    width: 5rem;
+}
+
+#images-group thead th:last-child {
+    width: 4.5rem;
+}
+
+/* Inputs follow their column instead of dictating its width */
+#images-group td input[type="url"],
+#images-group td input[type="text"],
+#images-group td input[type="number"],
+#images-group td input[type="file"],
+#images-group td .vURLField,
+#images-group td .vTextField,
+#images-group td .vIntegerField {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Long filenames and URLs wrap rather than pushing the column open */
+#images-group td,
+#images-group td p,
+#images-group td a {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+#images-group td.field-image p.file-upload {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
+/* The row heading (Django absolutely positions td.original > p) can be
+   longer than the cell it sits in — let it use the full row width. */
+#images-group tr td.original p {
+    max-width: 100%;
+    padding-right: 9px;
+    text-overflow: ellipsis;
+}
+
+#images-group td.field-preview img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ── Narrow screens: one field per line ───────────────────────────────
+   Below the admin's own breakpoint the proportional columns would leave
+   each input a few characters wide, so the row becomes a stack. Headers
+   are replaced with per-cell labels since <thead> is dropped. */
+@media (max-width: 767px) {
+    #images-group table,
+    #images-group tbody,
+    #images-group tr,
+    #images-group td {
+        display: block;
+        width: 100%;
+    }
+
+    #images-group thead {
+        display: none;
+    }
+
+    #images-group tbody tr.form-row {
+        padding: 0.5rem 0 1rem;
+        border-bottom: 1px solid var(--border-color, #444);
+    }
+
+    #images-group tbody tr.form-row.has_original {
+        padding-top: 2.25rem;
+    }
+
+    #images-group td {
+        padding: 0.35rem 0.75rem;
+    }
+
+    #images-group td.field-image::before,
+    #images-group td.field-image_url::before,
+    #images-group td.field-caption::before,
+    #images-group td.field-order::before,
+    #images-group td.delete::before {
+        display: block;
+        margin-bottom: 0.2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--body-quiet-color, #9ca3af);
+    }
+
+    #images-group td.field-image::before {
+        content: "Image file";
+    }
+
+    #images-group td.field-image_url::before {
+        content: "Image URL";
+    }
+
+    #images-group td.field-caption::before {
+        content: "Caption";
+    }
+
+    #images-group td.field-order::before {
+        content: "Order";
+    }
+
+    #images-group td.delete::before {
+        content: "Delete";
+    }
+
+    #images-group td.delete:empty {
+        display: none;
+    }
+}

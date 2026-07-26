@@ -131,8 +131,12 @@ def about(request):
 
 
 def projects(request):
+    # prefetch_related keeps the gallery slides on the cached objects, so
+    # rendering the carousel costs no extra queries on a cache hit.
     projects = cache.get_or_set(
-        "all_projects", lambda: list(Project.objects.all()), 86400
+        "all_projects",
+        lambda: list(Project.objects.prefetch_related("images")),
+        86400,
     )
     context = {"projects": projects}
     return render(request, "projects.html", context)

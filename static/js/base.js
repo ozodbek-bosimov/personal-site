@@ -257,3 +257,19 @@ initApp(document);
 document.addEventListener("htmx:afterSettle", function(event) {
   initApp(event.target);
 });
+
+// ── Rasmlarni drag qilishni to'xtatish ─────────────────────────────
+// CSS `-webkit-user-drag` Firefox'da ishlamaydi, shuning uchun document
+// darajasida `dragstart`ni bloklaymiz. Delegated listener bo'lgani uchun
+// HTMX swap'dan keyin kelgan yangi rasmlarga ham amal qiladi.
+// hx-boost body'ni yangilaganda skript qayta ishga tushishi mumkin —
+// flag bilan listener bir marta ro'yxatga olinishini kafolatlaymiz.
+if (!window.__imgDragBlocked) {
+  window.__imgDragBlocked = true;
+  document.addEventListener("dragstart", function (event) {
+    var el = event.target;
+    if (el && el.nodeType === 1 && el.closest("img, picture, svg")) {
+      event.preventDefault();
+    }
+  });
+}

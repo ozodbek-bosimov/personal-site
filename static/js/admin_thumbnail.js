@@ -6,20 +6,40 @@
   var MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
   var META_MAX_CHARS = 300;
 
+  // Inputs currently holding an oversized file. Save stays disabled while
+  // this is non-empty, which matters now that a form can carry several
+  // image inputs (project gallery inlines).
+  var oversized = [];
+
+  function setSaveDisabled(disabled) {
+    document.querySelectorAll('[name="_save"], [name="_continue"], [name="_addanother"]')
+      .forEach(function (btn) { btn.disabled = disabled; });
+  }
+
+  function errorNodeFor(input) {
+    var next = input.nextSibling;
+    while (next) {
+      if (next.nodeType === 1 && next.classList.contains('image-size-error')) {
+        return next;
+      }
+      next = next.nextSibling;
+    }
+    return null;
+  }
+
   function validateThumbnail(input) {
     if (!input.files || input.files.length === 0) return;
 
     var file = input.files[0];
-    var errorId = 'thumbnail-size-error';
-    var existing = document.getElementById(errorId);
+    var existing = errorNodeFor(input);
+    var position = oversized.indexOf(input);
 
     if (file.size > MAX_SIZE_BYTES) {
       var sizeMB = (file.size / (1024 * 1024)).toFixed(1);
 
       if (!existing) {
         var msg = document.createElement('p');
-        msg.id = errorId;
-        msg.className = 'errornote';
+        msg.className = 'errornote image-size-error';
         msg.style.cssText =
           'color:#ba2121; background:#fff0f0; border:1px solid #ba2121;' +
           ' padding:8px 12px; margin-top:8px; border-radius:4px;';
@@ -31,16 +51,20 @@
         'Image size is ' + sizeMB + ' MB — maximum allowed size is ' +
         MAX_SIZE_MB + ' MB. Please choose a smaller file.';
 
-      // Disable save buttons
-      document.querySelectorAll('[name="_save"], [name="_continue"], [name="_addanother"]')
-        .forEach(function (btn) { btn.disabled = true; });
+      if (position === -1) oversized.push(input);
+      setSaveDisabled(true);
 
       // Reset input so user must re-pick
-      setTimeout(function () { input.value = ''; }, 0);
+      setTimeout(function () {
+        input.value = '';
+        var index = oversized.indexOf(input);
+        if (index !== -1) oversized.splice(index, 1);
+        if (oversized.length === 0) setSaveDisabled(false);
+      }, 0);
     } else {
       if (existing) existing.remove();
-      document.querySelectorAll('[name="_save"], [name="_continue"], [name="_addanother"]')
-        .forEach(function (btn) { btn.disabled = false; });
+      if (position !== -1) oversized.splice(position, 1);
+      if (oversized.length === 0) setSaveDisabled(false);
     }
   }
 
@@ -89,10 +113,14 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    var thumbnailInput = document.getElementById('id_thumbnail_img');
-    if (thumbnailInput) {
-      thumbnailInput.addEventListener('change', function () { validateThumbnail(this); });
-    }
+    // Delegated so it also covers image inputs inside inline formsets —
+    // including rows added after page load via "Add another".
+    document.addEventListener('change', function (event) {
+      var target = event.target;
+      if (target && target.tagName === 'INPUT' && target.type === 'file') {
+        validateThumbnail(target);
+      }
+    });
 
     var metaInput = document.getElementById('id_meta');
     enforceMetaLimit(metaInput);

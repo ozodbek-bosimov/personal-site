@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.urls import path, reverse
 from django.utils import timezone
-from django.utils.html import escape, format_html
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django_ckeditor_5.widgets import CKEditor5Widget
 
@@ -19,6 +19,7 @@ from home.models import (
     Experience,
     ExperienceRole,
     Project,
+    ProjectImage,
     SharedFile,
     Skill,
 )
@@ -172,16 +173,28 @@ class BlogAdmin(admin.ModelAdmin):
     class Media:
         js = ("js/admin_thumbnail.js", "js/admin_ckeditor_fix.js")
 
-    list_display = ["title", "topic", "created_at_display", "slug"]
+    list_display = ["title", "topic", "created_at_display", "reading_time", "slug"]
     list_filter = ["topic"]
     search_fields = ["title", "topic", "slug"]
-    readonly_fields = ("thumbnail_preview",)
+    date_hierarchy = "time"
+    ordering = ["-time"]
+    prepopulated_fields = {"slug": ("title",)}
+    readonly_fields = ("thumbnail_preview", "updated_at")
     fieldsets = (
-        (None, {"fields": ("title", "meta", "content", "topic", "slug")}),
-        ("Meta", {"fields": ("time",)}),
+        ("Content", {"fields": ("title", "meta", "content")}),
         (
             "Thumbnail",
             {"fields": ("thumbnail_img", "thumbnail_url", "thumbnail_preview")},
+        ),
+        (
+            "Publishing",
+            {
+                "fields": ("topic", "slug", "time", "updated_at"),
+                "description": (
+                    "'Slug' is the URL of the post. Changing it on a published "
+                    "post breaks existing links."
+                ),
+            },
         ),
     )
 
@@ -189,19 +202,19 @@ class BlogAdmin(admin.ModelAdmin):
     def created_at_display(self, obj):
         return timezone.localtime(obj.time).strftime("%Y-%m-%d  %H:%M")
 
+    @admin.display(description="Read", ordering="reading_time_minutes")
+    def reading_time(self, obj):
+        return f"{obj.reading_time_minutes} min"
+
     @admin.display(description="Current thumbnail")
     def thumbnail_preview(self, obj):
-        if obj.thumbnail_img:
-            return format_html(
-                '<img src="{}" style="max-width: 200px; height: auto;" />',
-                escape(obj.thumbnail_img.url),
-            )
-        elif obj.thumbnail_url:
-            return format_html(
-                '<img src="{}" style="max-width: 200px; height: auto;" />',
-                escape(obj.thumbnail_url),
-            )
-        return "(No image)"
+        url = obj.effective_thumbnail if obj else ""
+        if not url:
+            return "(No image)"
+        return format_html(
+            '<img src="{}" style="max-width: 200px; height: auto; border-radius: 6px;" />',
+            url,
+        )
 
 
 admin.site.register(Blog, BlogAdmin)
@@ -291,29 +304,64 @@ class AboutMeAdmin(admin.ModelAdmin):
             return False
         return super().has_add_permission(request)
 
+    def has_delete_permission(self, request, obj=None):
+        """The site reads from this single row — deleting it empties the
+        About page, so the action is taken off the table."""
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        """A one-row model does not need a list: go straight to the form."""
+        existing = AboutMe.objects.first()
+        if existing and not request.GET:
+            return redirect(reverse("admin:home_aboutme_change", args=[existing.pk]))
+        return super().changelist_view(request, extra_context=extra_context)
+
     @admin.display(description="Profile Image Preview")
     def profile_image_preview(self, obj):
-        if obj:
-            url = obj.effective_profile_image
-            if url:
-                return format_html(
-                    '<img src="{}" style="max-width: 200px; '
-                    'height: auto; border-radius: 50%;" />',
-                    escape(url),
-                )
-        return "(No image)"
+        url = obj.effective_profile_image if obj else ""
+        if not url:
+            return "(No image)"
+        return format_html(
+            '<img src="{}" style="max-width: 200px; height: auto; border-radius: 50%;" />',
+            url,
+        )
 
     @admin.display(description="Hero Background Preview")
     def hero_image_preview(self, obj):
-        if obj:
-            url = obj.effective_hero_image
-            if url:
-                return format_html(
-                    '<img src="{}" style="max-width: 320px; width: 100%; '
-                    'height: auto; border-radius: 16px;" />',
-                    escape(url),
-                )
-        return "(No image)"
+        url = obj.effective_hero_image if obj else ""
+        if not url:
+            return "(No image)"
+        return format_html(
+            '<img src="{}" style="max-width: 320px; width: 100%; '
+            'height: auto; border-radius: 16px;" />',
+            url,
+        )
+
+
+class SkillLevelFilter(admin.SimpleListFilter):
+    """Filter by proficiency band instead of by exact percentage.
+
+    Filtering on the raw number produced one entry per distinct value,
+    which grows with every skill added and helps nobody.
+    """
+
+    title = "level"
+    parameter_name = "level"
+
+    def lookups(self, request, model_admin):
+        return [(label, label) for _, label in Skill.LEVEL_BANDS]
+
+    def queryset(self, request, queryset):
+        chosen = self.value()
+        if not chosen:
+            return queryset
+
+        floor = 0
+        for ceiling, label in Skill.LEVEL_BANDS:
+            if label == chosen:
+                return queryset.filter(percentage__gte=floor, percentage__lte=ceiling)
+            floor = ceiling + 1
+        return queryset
 
 
 class SkillAdmin(admin.ModelAdmin):
@@ -325,16 +373,20 @@ class SkillAdmin(admin.ModelAdmin):
             fields = "__all__"
             help_texts = {
                 "percentage": (
-                    "0-19% → Familiar, 20-39% → Basic, 40-69% → Working Knowledge, "
+                    "0-19% → Familiar, 20-39% → Basic, 40-69% → Working knowledge, "
                     "70-89% → Advanced, 90-100% → Expert"
                 ),
             }
 
     form = SkillAdminForm
-    list_display = ["name", "percentage", "order"]
+    list_display = ["name", "percentage", "level", "order"]
     list_editable = ["order"]
-    list_filter = ["percentage"]
+    list_filter = [SkillLevelFilter]
     search_fields = ["name"]
+
+    @admin.display(description="Level", ordering="percentage")
+    def level(self, obj):
+        return obj.level_display
 
 
 class ProjectAdminForm(forms.ModelForm):
@@ -375,8 +427,14 @@ class ProjectAdminForm(forms.ModelForm):
             raise ValidationError("End date cannot be before the start date.")
         return cleaned
 
-    def clean_thumbnail_img(self):
-        img = self.cleaned_data.get("thumbnail_img")
+
+class ProjectImageInlineForm(forms.ModelForm):
+    class Meta:
+        model = ProjectImage
+        fields = "__all__"
+
+    def clean_image(self):
+        img = self.cleaned_data.get("image")
         if img and hasattr(img, "size") and img.size > 10 * 1024 * 1024:
             size_mb = img.size / (1024 * 1024)
             raise forms.ValidationError(
@@ -385,18 +443,85 @@ class ProjectAdminForm(forms.ModelForm):
             )
         return img
 
+    def clean(self):
+        cleaned = super().clean()
+        # Skip empty extra rows and rows queued for deletion
+        if not self.has_changed() or cleaned.get("DELETE"):
+            return cleaned
+        if not cleaned.get("image") and not cleaned.get("image_url"):
+            raise ValidationError(
+                "Provide either an uploaded image or an image URL for this slide."
+            )
+        return cleaned
+
+
+class ProjectImageInline(admin.TabularInline):
+    """The single place project images are managed.
+
+    Rows are sorted by 'order'; the first one is the cover (card thumbnail
+    and social preview) and every row becomes a slide in the card carousel.
+    """
+
+    model = ProjectImage
+    form = ProjectImageInlineForm
+    extra = 1
+    fields = ("preview", "image", "image_url", "caption", "order")
+    readonly_fields = ("preview",)
+    ordering = ("order", "id")
+    verbose_name = "Image"
+    verbose_name_plural = "Images"
+
+    class Media:
+        css = {"all": ("css/admin_project_images.css",)}
+
+    IMG_STYLE = (
+        "width: 120px; height: 68px; object-fit: cover; "
+        "border-radius: 6px; background: #111827;"
+    )
+
+    @admin.display(description="Preview")
+    def preview(self, obj):
+        if not obj or not obj.pk:
+            return mark_safe(
+                '<span style="color:#94a3b8">New image \u2014 pick a file or paste a URL</span>'
+            )
+
+        url = obj.effective_image
+        if not url:
+            return mark_safe('<span style="color:#ef4444">No file or URL</span>')
+
+        # The lowest-ordered image doubles as the card cover; label it here
+        # rather than explaining the rule in prose. One tiny query per row,
+        # and a project only ever holds a handful of images.
+        cover_pk = (
+            ProjectImage.objects.filter(project_id=obj.project_id)
+            .order_by("order", "id")
+            .values_list("pk", flat=True)
+            .first()
+        )
+        if cover_pk == obj.pk:
+            return format_html(
+                '<div><img src="{}" style="{}" /><div style="margin-top:4px;'
+                ' font-size:11px; font-weight:600; color:#93c5fd">Cover</div></div>',
+                url,
+                self.IMG_STYLE,
+            )
+        return format_html('<img src="{}" style="{}" />', url, self.IMG_STYLE)
+
 
 class ProjectAdmin(admin.ModelAdmin):
     """Admin for Project model"""
 
     form = ProjectAdminForm
+    inlines = [ProjectImageInline]
 
     class Media:
         js = ("js/admin_thumbnail.js", "js/admin_project_desc.js")
 
-    list_display = ["title", "date_range", "order", "created_at"]
+    list_display = ["title", "date_range", "cover", "image_count", "order"]
     list_editable = ["order"]
-    readonly_fields = ("thumbnail_preview", "created_at")
+    list_filter = ["is_current"]
+    readonly_fields = ("created_at",)
     fieldsets = (
         (
             "Basic Info",
@@ -410,15 +535,31 @@ class ProjectAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        (
-            "Thumbnail",
-            {"fields": ("thumbnail_img", "thumbnail_url", "thumbnail_preview")},
-        ),
         ("Links", {"fields": ("github_link", "demo_link")}),
         ("Technical", {"fields": ("technologies",)}),
         ("Meta", {"fields": ("order", "created_at")}),
     )
     search_fields = ["title", "description", "technologies"]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related("images")
+
+    @admin.display(description="Cover")
+    def cover(self, obj):
+        url = obj.effective_thumbnail
+        if not url:
+            return mark_safe('<span style="color:#94a3b8">\u2014 none \u2014</span>')
+        return format_html(
+            '<img src="{}" style="width: 72px; height: 41px; object-fit: cover; '
+            'border-radius: 4px; background: #111827;" />',
+            url,
+        )
+
+    @admin.display(description="Images")
+    def image_count(self, obj):
+        total = len(obj.gallery)
+        color = "#22d3ee" if total > 1 else "#94a3b8"
+        return format_html('<span style="color:{}">{}</span>', color, total)
 
     @admin.display(description="Timeline", ordering="start_date")
     def date_range(self, obj):
@@ -429,17 +570,6 @@ class ProjectAdmin(admin.ModelAdmin):
         if dur:
             return f"{r}  ·  {dur}"
         return r
-
-    @admin.display(description="Thumbnail Preview")
-    def thumbnail_preview(self, obj):
-        if obj:
-            url = obj.effective_thumbnail
-            if url:
-                return format_html(
-                    '<img src="{}" style="max-width: 200px; height: auto;" />',
-                    escape(url),
-                )
-        return "(No image)"
 
 
 class LogEntryAdmin(admin.ModelAdmin):
@@ -543,21 +673,25 @@ class ExperienceAdmin(admin.ModelAdmin):
     class Media:
         css = {"all": ("css/admin_experience.css",)}
 
-    list_display = ["company", "entry_type", "order"]
+    list_display = ["company", "logo", "entry_type", "order"]
     list_editable = ["order"]
     search_fields = ["company"]
     inlines = [ExperienceRoleInline]
     fieldsets = (
         (
             "Company",
+            {"fields": ("company", "company_url", "order")},
+        ),
+        (
+            "Logo",
             {
-                "fields": (
-                    "company",
-                    "company_url",
-                    "company_logo",
-                    "company_logo_url",
-                    "order",
-                )
+                "fields": ("company_logo", "company_logo_url"),
+                "description": (
+                    "Prefer uploading a file. LinkedIn image links "
+                    "(media.licdn.com) are signed and expire after a few "
+                    "months, after which the logo silently falls back to a "
+                    "placeholder."
+                ),
             },
         ),
     )
@@ -565,16 +699,29 @@ class ExperienceAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related("roles")
 
+    @admin.display(description="Logo")
+    def logo(self, obj):
+        url = obj.logo_url
+        if not url:
+            return mark_safe('<span style="color:#94a3b8">\u2014</span>')
+        return format_html(
+            '<img src="{}" style="width: 28px; height: 28px; object-fit: contain; '
+            'border-radius: 4px; background: #111827;" />',
+            url,
+        )
+
     @admin.display(description="Type")
     def entry_type(self, obj):
-        role_count = obj.roles.count()
-        if role_count > 1:
+        # len() on the prefetched list — .count() would fire a query per row
+        roles = list(obj.roles.all())
+        if len(roles) > 1:
             return format_html(
-                '<span style="color:#22d3ee">{} roles</span>', role_count
+                '<span style="color:#22d3ee">{} roles</span>', len(roles)
             )
-        if role_count == 1:
-            role = obj.roles.first()
-            return format_html('<span style="color:#94a3b8">{}</span>', role.position)
+        if len(roles) == 1:
+            return format_html(
+                '<span style="color:#94a3b8">{}</span>', roles[0].position
+            )
         return mark_safe('<span style="color:#ef4444">\u2014 empty \u2014</span>')
 
 
@@ -589,16 +736,28 @@ admin.site.register(LogEntry, LogEntryAdmin)
 class SharedFileAdmin(admin.ModelAdmin):
     list_display = ("name", "file", "uploaded_at", "copy_url_button")
     search_fields = ("name", "file")
+    date_hierarchy = "uploaded_at"
     readonly_fields = ("uploaded_at",)
 
     @admin.display(description="Copy URL")
     def copy_url_button(self, obj):
         if obj.file and hasattr(obj.file, "url"):
             return format_html(
-                "<a class=\"button\" style=\"cursor: pointer; color: white;\" onclick=\"navigator.clipboard.writeText(window.location.origin + '{}'); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy URL', 2000);\">Copy URL</a>",
-                escape(obj.file.url),
+                '<a class="button" style="cursor: pointer; color: white;" '
+                "onclick=\"navigator.clipboard.writeText(window.location.origin + '{}');"
+                " this.innerText='Copied!';"
+                " setTimeout(() => this.innerText='Copy URL', 2000);\">Copy URL</a>",
+                obj.file.url,
             )
         return ""
+
+
+# ── Admin branding ──────────────────────────────────────────────────────
+# Without this the panel just says "Django administration", which says
+# nothing about which site is being edited.
+admin.site.site_header = "ozodbek.me"
+admin.site.site_title = "ozodbek.me admin"
+admin.site.index_title = "Site content"
 
 
 # Custom ordering for models in the admin panel
