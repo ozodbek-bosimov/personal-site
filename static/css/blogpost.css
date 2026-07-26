@@ -49,27 +49,10 @@
     color: #4ade80;
 }
 
-/* ── Rich Media Sizing ─────────────────────────────────────────── */
-.blog-content figure {
-    margin: 1.5rem 0;
-}
-
-.blog-content iframe {
-    width: 100%;
-    max-width: 100%;
-    border: none;
-    margin: 0;
-}
-
-.blog-content iframe[src*="youtube.com"],
-.blog-content iframe[src*="youtu.be"] {
-    aspect-ratio: 16 / 9;
-    height: auto;
-}
-
-.blog-content iframe[src*="spotify.com"] {
-    height: 152px;
-}
+/* Rich media sizing (figures, YouTube/Spotify iframes) now lives in
+   base.css under ".blog-content", so blog posts and the About bio share
+   one set of rules. Only the JS-generated social embeds below are
+   specific to this page. */
 
 /* ── Social Media Embed Iframes (responsive) ──────────────────── */
 /* All sizing lives in CSS so embeds scale to every viewport.      */
