@@ -1,0 +1,26 @@
+<!-- tk:meta
+name: Stat cards
+tool: stats
+group: Structure
+description: A row of headline numbers with labels. For results, benchmarks or before/after figures.
+interactive: no
+param: data-cols :: 2 | 3 | 4 :: 3 :: Columns from 40rem up. Below that the grid falls back to auto-fit.
+param: note paragraph :: text :: — :: Optional third line per card for a caveat or source.
+a11y: Values and labels are ordinary paragraphs, read in order. The gradient number keeps a real text colour fallback.
+limits: Figures are typed in, not computed. Keep values short — a long number breaks the single-line layout.
+-->
+<div class="tk-block tk-stats" data-tk="stats" data-cols="3">
+    <div class="tk-stat">
+        <p class="tk-stat__value">98%</p>
+        <p class="tk-stat__label">Test coverage</p>
+    </div>
+    <div class="tk-stat">
+        <p class="tk-stat__value">1.4s</p>
+        <p class="tk-stat__label">Median build</p>
+        <p class="tk-stat__note">down from 6.2s</p>
+    </div>
+    <div class="tk-stat">
+        <p class="tk-stat__value">3&times;</p>
+        <p class="tk-stat__label">Fewer queries</p>
+    </div>
+</div>

@@ -1,0 +1,51 @@
+<!-- tk:meta
+name: Flashcards
+tool: flashcards
+group: Recall
+description: A keyboard-friendly deck that shows one prompt at a time, reveals its answer, moves in both directions and can shuffle.
+interactive: yes
+param: data-shuffle :: yes | no :: no :: Shuffle once when the deck initializes.
+param: data-flip-label :: text :: Flip :: Label of the answer reveal action.
+param: data-shuffle-label :: text :: Shuffle :: Label of the deck shuffle action.
+param: front paragraph :: text and inline markup :: — :: The prompt or term shown first and used as the card's accessible label.
+param: back container :: rich text :: — :: The answer revealed by the runtime.
+a11y: Previous, next, flip and shuffle are real buttons. The flip button carries aria-expanded and aria-controls, the counter is a polite live region, and Left/Right arrows move through the deck from any deck control.
+limits: Progress is not persisted. With JavaScript off all front/back pairs remain visible in source order as a readable glossary.
+-->
+<div
+    class="tk-block tk-cards"
+    data-tk="flashcards"
+    data-shuffle="no"
+    data-flip-label="Show answer"
+    data-shuffle-label="Shuffle"
+>
+    <p class="tk-cards__title">HTTP flashcards</p>
+    <div class="tk-cards__card">
+        <p class="tk-cards__front"><strong>What does HTTP 201 mean?</strong></p>
+        <div class="tk-cards__back">
+            <p>
+                <strong>Created.</strong> The request succeeded and created a
+                new resource.
+            </p>
+        </div>
+    </div>
+    <div class="tk-cards__card">
+        <p class="tk-cards__front">
+            <strong>Which method is normally idempotent: POST or PUT?</strong>
+        </p>
+        <div class="tk-cards__back">
+            <p>
+                <strong>PUT.</strong> Repeating the same request should leave
+                the resource in the same resulting state.
+            </p>
+        </div>
+    </div>
+    <div class="tk-cards__card">
+        <p class="tk-cards__front">
+            <strong>What does the Cache-Control max-age value measure?</strong>
+        </p>
+        <div class="tk-cards__back">
+            <p>The number of seconds a response may be considered fresh.</p>
+        </div>
+    </div>
+</div>

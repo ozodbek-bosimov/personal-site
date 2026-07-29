@@ -1,0 +1,1442 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Content Toolkit — preview gallery</title>
+
+        <!--
+    Offline gallery. Open this file straight from disk:
+
+        open tools/preview/index.html
+
+    No server, no build step. It loads the real stylesheets in the real
+    production order — base.css first, then content-tools.css — and wraps
+    every block in `.blog-content.ck-content`, which is the exact cascade a
+    blog post renders under. That matters: base.css styles `.blog-content a`
+    at a higher specificity than a bare `.tk-btn`, so a toolkit button
+    styled without care looks fine in isolation and wrong on the live site.
+    This page is where that shows up.
+
+    The surface toggle swaps in `.tk-surface-light`, the same token override
+    the CKEditor editing area gets, so both appearances can be checked
+    without opening the admin.
+-->
+
+        <link rel="stylesheet" href="../../static/css/base.css" />
+        <link rel="stylesheet" href="../../static/css/content-tools.css" />
+
+        <style>
+            /* Page chrome only. Nothing here is part of the toolkit. */
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                background: #111827;
+                color: #e2e8f0;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    Roboto,
+                    sans-serif;
+                line-height: 1.6;
+            }
+
+            .pv-bar {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.9rem 1.5rem;
+                background: rgba(17, 24, 39, 0.92);
+                backdrop-filter: blur(10px);
+                border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            }
+
+            .pv-bar h1 {
+                margin: 0;
+                font-size: 1rem;
+                font-weight: 700;
+                letter-spacing: 0.01em;
+            }
+
+            .pv-bar__spacer {
+                flex: 1 1 auto;
+            }
+
+            .pv-bar code {
+                padding: 0.1rem 0.4rem;
+                border-radius: 4px;
+                background: rgba(148, 163, 184, 0.16);
+                font-size: 0.8rem;
+            }
+
+            .pv-toggle {
+                appearance: none;
+                padding: 0.45rem 0.9rem;
+                border: 1px solid rgba(148, 163, 184, 0.35);
+                border-radius: 999px;
+                background: transparent;
+                color: inherit;
+                font: inherit;
+                font-size: 0.8rem;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+            .pv-toggle:hover {
+                border-color: #22d3ee;
+                color: #67e8f9;
+            }
+
+            .pv-wrap {
+                max-width: 56rem;
+                margin: 0 auto;
+                padding: 2rem 1.5rem 6rem;
+            }
+
+            .pv-group {
+                margin: 2.5rem 0 1rem;
+                padding-bottom: 0.4rem;
+                border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+                color: #94a3b8;
+            }
+
+            .pv-case {
+                margin: 1.75rem 0 2.5rem;
+            }
+
+            .pv-case__head {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: baseline;
+                gap: 0.5rem;
+                margin-bottom: 0.2rem;
+            }
+
+            .pv-case__name {
+                font-size: 1rem;
+                font-weight: 650;
+                color: #f1f5f9;
+            }
+
+            .pv-case__tool {
+                padding: 0.05rem 0.4rem;
+                border-radius: 4px;
+                background: rgba(34, 211, 238, 0.14);
+                color: #67e8f9;
+                font-family: ui-monospace, Menlo, Consolas, monospace;
+                font-size: 0.72rem;
+            }
+
+            .pv-case__note {
+                margin: 0 0 0.9rem;
+                color: #94a3b8;
+                font-size: 0.85rem;
+            }
+
+            /* The stage reproduces a real post: same wrapper classes, same
+       max-width, same background as templates/blogpost.html. */
+            .pv-stage {
+                padding: 1.25rem 1.5rem;
+                border: 1px dashed rgba(148, 163, 184, 0.25);
+                border-radius: 14px;
+                background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+            }
+
+            body.pv-light .pv-stage {
+                background: #fff;
+                border-color: rgba(15, 23, 42, 0.18);
+            }
+
+            /* Light stage mimics the admin editing surface. */
+            body.pv-light .pv-stage .blog-content {
+                color: #1e293b;
+            }
+
+            .pv-hint {
+                margin: 0 0 2rem;
+                padding: 0.9rem 1.1rem;
+                border-left: 3px solid #22d3ee;
+                border-radius: 6px;
+                background: rgba(34, 211, 238, 0.08);
+                font-size: 0.875rem;
+                color: #cbd5e1;
+            }
+
+            .pv-hint ol {
+                margin: 0.5rem 0 0;
+                padding-left: 1.4rem;
+            }
+            .pv-hint li {
+                margin-bottom: 0.25rem;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="pv-bar">
+            <h1>Content Toolkit</h1>
+            <code>tools/preview/index.html</code>
+            <span class="pv-bar__spacer"></span>
+            <button type="button" class="pv-toggle" id="pv-surface">
+                Switch to light surface
+            </button>
+        </div>
+
+        <div class="pv-wrap">
+            <div class="pv-hint">
+                <strong>Round-trip check.</strong> Rendering correctly here is
+                not proof a block survives the editor. For every block you
+                change:
+                <ol>
+                    <li>
+                        Paste it into a CKEditor field via <em>Source</em>, or
+                        use the admin picker.
+                    </li>
+                    <li>Save the record.</li>
+                    <li>Reopen it and read <em>Source</em> again.</li>
+                    <li>
+                        Same tags, same nesting, same classes, same
+                        <code>data-*</code> values. Attribute order may differ —
+                        that is fine.
+                    </li>
+                </ol>
+                <p style="margin: 0.5rem 0 0">
+                    <code>python manage.py build_tools_catalog --check</code>
+                    covers the mechanical rules; step 4 is the human part.
+                </p>
+            </div>
+
+            <!-- ══ group: Notes & callouts ══════════════════════════════════ -->
+            <div class="pv-group">Notes &amp; callouts</div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Callout</span>
+                    <span class="pv-case__tool">data-tk="callout"</span>
+                </div>
+                <p class="pv-case__note">
+                    Five variants. Rail colour, wash and badge glyph all follow
+                    <code>data-variant</code>.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-callout"
+                            data-tk="callout"
+                            data-variant="info"
+                        >
+                            <div class="tk-callout__body">
+                                <p class="tk-callout__title">Good to know</p>
+                                <p>
+                                    The default variant. Use it for context the
+                                    reader can take or leave.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="tk-block tk-callout"
+                            data-tk="callout"
+                            data-variant="tip"
+                        >
+                            <div class="tk-callout__body">
+                                <p class="tk-callout__title">Tip</p>
+                                <p>
+                                    A shortcut or a better way of doing what was
+                                    just described.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="tk-block tk-callout"
+                            data-tk="callout"
+                            data-variant="warning"
+                        >
+                            <div class="tk-callout__body">
+                                <p class="tk-callout__title">Careful</p>
+                                <p>
+                                    Something that will bite if it is skipped.
+                                    Links inside the body keep the normal
+                                    <a href="#">prose link</a> styling.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="tk-block tk-callout"
+                            data-tk="callout"
+                            data-variant="danger"
+                        >
+                            <div class="tk-callout__body">
+                                <p class="tk-callout__title">Do not do this</p>
+                                <p>
+                                    Reserved for data loss, security holes and
+                                    irreversible actions.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="tk-block tk-callout"
+                            data-tk="callout"
+                            data-variant="success"
+                        >
+                            <div class="tk-callout__body">
+                                <p>
+                                    No title paragraph on this one — the badge
+                                    and rail carry the meaning on their own.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Key takeaways</span>
+                    <span class="pv-case__tool">data-tk="key-takeaways"</span>
+                </div>
+                <p class="pv-case__note">
+                    Summary panel. Works as a preview at the top of a post or a
+                    recap at the end.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-takeaways"
+                            data-tk="key-takeaways"
+                        >
+                            <p class="tk-takeaways__title">Key takeaways</p>
+                            <ul class="tk-list tk-takeaways__list">
+                                <li>
+                                    The first thing you want the reader to walk
+                                    away with.
+                                </li>
+                                <li>
+                                    The second &mdash; keep each of these to a
+                                    single sentence.
+                                </li>
+                                <li>
+                                    The third, and probably the last worth
+                                    listing.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Pull quote</span>
+                    <span class="pv-case__tool">data-tk="quote"</span>
+                </div>
+                <p class="pv-case__note">
+                    Deliberately overrides the <code>blockquote</code> styling
+                    from base.css, so it will not match a plain editor
+                    blockquote.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div class="tk-block tk-quote" data-tk="quote">
+                            <blockquote class="tk-quote__body">
+                                <p>
+                                    The sentence worth setting apart from
+                                    everything around it. Long enough to earn
+                                    the space, short enough to stay quotable.
+                                </p>
+                            </blockquote>
+                            <p class="tk-quote__cite">
+                                <strong>Name Surname</strong
+                                ><span class="tk-quote__role"
+                                    >Role, Company</span
+                                >
+                            </p>
+                        </div>
+                        <blockquote>
+                            <p>
+                                For comparison, this is an ordinary editor
+                                blockquote as base.css styles it.
+                            </p>
+                        </blockquote>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ group: Actions ═══════════════════════════════════════════ -->
+            <div class="pv-group">Actions</div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Buttons / CTA row</span>
+                    <span class="pv-case__tool">data-tk="button"</span>
+                </div>
+                <p class="pv-case__note">
+                    Anchors, never buttons. Watch that none of them picks up the
+                    underline-grow animation from <code>.blog-content a</code>.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div class="tk-block tk-btn-row" data-tk="button">
+                            <a class="tk-btn tk-btn--primary" href="#"
+                                >Primary action</a
+                            >
+                            <a class="tk-btn tk-btn--gradient" href="#"
+                                >Gradient</a
+                            >
+                            <a class="tk-btn tk-btn--ghost" href="#">Ghost</a>
+                        </div>
+                        <div class="tk-block tk-btn-row" data-tk="button">
+                            <a
+                                class="tk-btn tk-btn--icon tk-btn--ghost"
+                                href="#"
+                                data-tk-icon="download"
+                                >Download</a
+                            >
+                            <a
+                                class="tk-btn tk-btn--icon tk-btn--ghost"
+                                href="#"
+                                data-tk-icon="external"
+                                >Open docs</a
+                            >
+                            <a
+                                class="tk-btn tk-btn--icon tk-btn--ghost"
+                                href="#"
+                                data-tk-icon="play"
+                                >Watch</a
+                            >
+                            <a
+                                class="tk-btn tk-btn--icon tk-btn--ghost"
+                                href="#"
+                                data-tk-icon="mail"
+                                >Email me</a
+                            >
+                            <a
+                                class="tk-btn tk-btn--icon tk-btn--ghost"
+                                href="#"
+                                data-tk-icon="code"
+                                >Source</a
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">CTA banner</span>
+                    <span class="pv-case__tool">data-tk="cta-banner"</span>
+                </div>
+                <p class="pv-case__note">
+                    Three background treatments via <code>data-variant</code>.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-cta"
+                            data-tk="cta-banner"
+                            data-variant="gradient"
+                        >
+                            <div class="tk-cta__body">
+                                <h3 class="tk-cta__title">
+                                    Want the whole checklist as a PDF?
+                                </h3>
+                                <p class="tk-cta__text">
+                                    One short line explaining what the reader
+                                    gets.
+                                </p>
+                            </div>
+                            <p class="tk-cta__actions">
+                                <a class="tk-btn tk-btn--primary" href="#"
+                                    >Get the PDF</a
+                                >
+                            </p>
+                        </div>
+                        <div
+                            class="tk-block tk-cta"
+                            data-tk="cta-banner"
+                            data-variant="outline"
+                        >
+                            <div class="tk-cta__body">
+                                <h3 class="tk-cta__title">
+                                    Two actions, dashed outline
+                                </h3>
+                                <p class="tk-cta__text">
+                                    A secondary button goes in the same actions
+                                    paragraph.
+                                </p>
+                            </div>
+                            <p class="tk-cta__actions">
+                                <a class="tk-btn tk-btn--primary" href="#"
+                                    >Subscribe</a
+                                ><a class="tk-btn tk-btn--ghost" href="#"
+                                    >Maybe later</a
+                                >
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ group: Cards ═════════════════════════════════════════════ -->
+            <div class="pv-group">Cards</div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Link card</span>
+                    <span class="pv-case__tool">data-tk="link-card"</span>
+                </div>
+                <p class="pv-case__note">
+                    Whole card is clickable via a stretched link, because
+                    CKEditor cannot model an anchor wrapped around block
+                    content.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div class="tk-block tk-linkcard" data-tk="link-card">
+                            <p class="tk-linkcard__title">
+                                <a
+                                    class="tk-linkcard__link"
+                                    href="https://example.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    >Title of the page you are pointing at</a
+                                >
+                            </p>
+                            <p class="tk-linkcard__desc">
+                                One or two lines saying what the reader will
+                                find on the other end, so the click is an
+                                informed one.
+                            </p>
+                            <p class="tk-linkcard__host">example.com</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">File card</span>
+                    <span class="pv-case__tool">data-tk="file-card"</span>
+                </div>
+                <p class="pv-case__note">
+                    The type badge is <code>content: attr(data-ext)</code> —
+                    really driven by the attribute, not duplicated as text.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-filecard"
+                            data-tk="file-card"
+                            data-ext="pdf"
+                        >
+                            <div class="tk-filecard__body">
+                                <p class="tk-filecard__name">
+                                    <a class="tk-filecard__link" href="#"
+                                        >Specification v2.pdf</a
+                                    >
+                                </p>
+                                <p class="tk-filecard__meta">
+                                    PDF &middot; 1.4 MB
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="tk-block tk-filecard"
+                            data-tk="file-card"
+                            data-ext="zip"
+                        >
+                            <div class="tk-filecard__body">
+                                <p class="tk-filecard__name">
+                                    <a class="tk-filecard__link" href="#"
+                                        >sample-project.zip</a
+                                    >
+                                </p>
+                                <p class="tk-filecard__meta">
+                                    ZIP archive &middot; 240 KB
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ group: Structure ═════════════════════════════════════════ -->
+            <div class="pv-group">Structure</div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Steps</span>
+                    <span class="pv-case__tool">data-tk="steps"</span>
+                </div>
+                <p class="pv-case__note">
+                    Numbers are a CSS counter. The second block starts at 4 via
+                    <code>data-start</code>.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div class="tk-block tk-steps" data-tk="steps">
+                            <ol class="tk-list tk-steps__list">
+                                <li class="tk-steps__item">
+                                    <h3 class="tk-steps__title">
+                                        Install the dependency
+                                    </h3>
+                                    <p>
+                                        What the reader actually does in this
+                                        step.
+                                    </p>
+                                </li>
+                                <li class="tk-steps__item">
+                                    <h3 class="tk-steps__title">
+                                        Wire it into settings
+                                    </h3>
+                                    <p>Keep steps at roughly the same size.</p>
+                                </li>
+                                <li class="tk-steps__item">
+                                    <h3 class="tk-steps__title">
+                                        Check that it worked
+                                    </h3>
+                                    <p>End on something verifiable.</p>
+                                </li>
+                            </ol>
+                        </div>
+                        <div
+                            class="tk-block tk-steps"
+                            data-tk="steps"
+                            data-start="4"
+                        >
+                            <ol class="tk-list tk-steps__list">
+                                <li class="tk-steps__item">
+                                    <p>
+                                        A continuation block, numbered from
+                                        four. No step titles on this one.
+                                    </p>
+                                </li>
+                                <li class="tk-steps__item">
+                                    <p>
+                                        The connector rail stops at the last
+                                        item.
+                                    </p>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Pros &amp; cons</span>
+                    <span class="pv-case__tool">data-tk="pros-cons"</span>
+                </div>
+                <p class="pv-case__note">
+                    Two lists rather than a table, so each column keeps its own
+                    heading and item count.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div class="tk-block tk-proscons" data-tk="pros-cons">
+                            <div class="tk-proscons__col" data-kind="pro">
+                                <p class="tk-proscons__title">Pros</p>
+                                <ul class="tk-list tk-proscons__list">
+                                    <li>
+                                        Something that genuinely argues for it.
+                                    </li>
+                                    <li>
+                                        Another real advantage, stated plainly.
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="tk-proscons__col" data-kind="con">
+                                <p class="tk-proscons__title">Cons</p>
+                                <ul class="tk-list tk-proscons__list">
+                                    <li>The cost, honestly described.</li>
+                                    <li>
+                                        The case where this is the wrong choice.
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Stat cards</span>
+                    <span class="pv-case__tool">data-tk="stats"</span>
+                </div>
+                <p class="pv-case__note">
+                    <code>data-cols</code> fixes the column count from 40rem up;
+                    below that the grid auto-fits.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-stats"
+                            data-tk="stats"
+                            data-cols="3"
+                        >
+                            <div class="tk-stat">
+                                <p class="tk-stat__value">98%</p>
+                                <p class="tk-stat__label">Test coverage</p>
+                            </div>
+                            <div class="tk-stat">
+                                <p class="tk-stat__value">1.4s</p>
+                                <p class="tk-stat__label">Median build</p>
+                                <p class="tk-stat__note">down from 6.2s</p>
+                            </div>
+                            <div class="tk-stat">
+                                <p class="tk-stat__value">3&times;</p>
+                                <p class="tk-stat__label">Fewer queries</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Responsive table</span>
+                    <span class="pv-case__tool">data-tk="table"</span>
+                </div>
+                <p class="pv-case__note">
+                    Inner markup is exactly what CKEditor's table feature emits.
+                    Narrow the window to see the scroll and the hint.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div class="tk-block tk-tablewrap" data-tk="table">
+                            <figure class="table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Option</th>
+                                            <th>What it does</th>
+                                            <th>Default</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>timeout</code></td>
+                                            <td>
+                                                Seconds before the request is
+                                                abandoned.
+                                            </td>
+                                            <td>30</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>retries</code></td>
+                                            <td>
+                                                How many times a failed call is
+                                                repeated.
+                                            </td>
+                                            <td>3</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </figure>
+                            <p class="tk-tablewrap__hint">
+                                Scroll sideways to see every column.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Divider</span>
+                    <span class="pv-case__tool">data-tk="divider"</span>
+                </div>
+                <p class="pv-case__note">
+                    Four variants. The mark paragraph always ships — it is
+                    hidden for <code>line</code> and <code>gradient</code>.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <p>Text above the divider.</p>
+                        <div
+                            class="tk-block tk-divider"
+                            data-tk="divider"
+                            data-variant="dots"
+                        >
+                            <p class="tk-divider__mark">
+                                &middot;&middot;&middot;
+                            </p>
+                        </div>
+                        <div
+                            class="tk-block tk-divider"
+                            data-tk="divider"
+                            data-variant="line"
+                        >
+                            <p class="tk-divider__mark">
+                                &middot;&middot;&middot;
+                            </p>
+                        </div>
+                        <div
+                            class="tk-block tk-divider"
+                            data-tk="divider"
+                            data-variant="gradient"
+                        >
+                            <p class="tk-divider__mark">
+                                &middot;&middot;&middot;
+                            </p>
+                        </div>
+                        <div
+                            class="tk-block tk-divider"
+                            data-tk="divider"
+                            data-variant="label"
+                        >
+                            <p class="tk-divider__mark">Part two</p>
+                        </div>
+                        <p>Text below the divider.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ group: Inline ════════════════════════════════════════════ -->
+            <div class="pv-group">Inline</div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name"
+                        >Badge &middot; kbd &middot; chip</span
+                    >
+                    <span class="pv-case__tool">data-tk="inline"</span>
+                </div>
+                <p class="pv-case__note">
+                    The <code>data-tk</code> marker on the paragraph is what
+                    loads this stylesheet on a page that uses nothing else.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <p class="tk-block tk-inline" data-tk="inline">
+                            Press <span class="tk-kbd">Ctrl</span> +
+                            <span class="tk-kbd">K</span> to open search. The
+                            endpoint is
+                            <span class="tk-badge" data-variant="success"
+                                >stable</span
+                            >
+                            as of v2, and the write path is
+                            <span class="tk-badge" data-variant="warning"
+                                >beta</span
+                            >. Filed under <span class="tk-chip">django</span>
+                            <span class="tk-chip">performance</span>.
+                        </p>
+                        <p class="tk-block tk-inline" data-tk="inline">
+                            Remaining badge variants:
+                            <span class="tk-badge">neutral</span>
+                            <span class="tk-badge" data-variant="info"
+                                >info</span
+                            >
+                            <span class="tk-badge" data-variant="danger"
+                                >deprecated</span
+                            >
+                            <span class="tk-badge" data-variant="accent"
+                                >accent</span
+                            >
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ group: Disclosure ════════════════════════════════════════ -->
+            <div class="pv-group">Disclosure</div>
+
+            <p class="pv-case__note" style="margin: -0.5rem 0 1.5rem">
+                Everything below is drawn by <code>content-tools.js</code> at
+                runtime. To check the no-JavaScript fallback, disable scripting
+                and reload: each block should turn into readable headings and
+                prose, never an empty box.
+            </p>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Spoiler</span>
+                    <span class="pv-case__tool">data-tk="spoiler"</span>
+                </div>
+                <p class="pv-case__note">
+                    Second one starts open via <code>data-open="yes"</code>.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-spoiler"
+                            data-tk="spoiler"
+                            data-open="no"
+                        >
+                            <p class="tk-spoiler__summary">Show the answer</p>
+                            <div class="tk-spoiler__body">
+                                <p>
+                                    Whatever should not be visible straight
+                                    away. A solution, a tangent, the punchline.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="tk-block tk-spoiler"
+                            data-tk="spoiler"
+                            data-open="yes"
+                        >
+                            <p class="tk-spoiler__summary">
+                                Already open, and the label has
+                                <code>inline code</code> in it
+                            </p>
+                            <div class="tk-spoiler__body">
+                                <p>
+                                    The runtime moves the label's child nodes
+                                    into the button rather than copying its
+                                    text, so formatting survives.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Accordion / FAQ</span>
+                    <span class="pv-case__tool">data-tk="accordion"</span>
+                </div>
+                <p class="pv-case__note">
+                    Up/Down arrows move between rows, Home and End jump to the
+                    ends. <code>data-single="yes"</code> keeps one row open at a
+                    time.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-accordion"
+                            data-tk="accordion"
+                            data-single="yes"
+                        >
+                            <div class="tk-accordion__item" data-open="yes">
+                                <h3 class="tk-accordion__q">
+                                    Does this still work without JavaScript?
+                                </h3>
+                                <div class="tk-accordion__a">
+                                    <p>
+                                        Yes. Every question is a real heading
+                                        and every answer sits directly beneath
+                                        it.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="tk-accordion__item">
+                                <h3 class="tk-accordion__q">
+                                    Can I keep more than one row open?
+                                </h3>
+                                <div class="tk-accordion__a">
+                                    <p>
+                                        Set <code>data-single="no"</code> on the
+                                        block.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="tk-accordion__item">
+                                <h3 class="tk-accordion__q">
+                                    What can go inside an answer?
+                                </h3>
+                                <div class="tk-accordion__a">
+                                    <p>
+                                        Paragraphs, lists, links, images —
+                                        anything the editor produces.
+                                    </p>
+                                    <ul class="tk-list tk-takeaways__list">
+                                        <li>
+                                            Including another toolkit list, if
+                                            it earns its place.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Tabs</span>
+                    <span class="pv-case__tool">data-tk="tabs"</span>
+                </div>
+                <p class="pv-case__note">
+                    Left/Right arrows switch panel and move focus. Tab key skips
+                    past the strip into the panel.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-tabs"
+                            data-tk="tabs"
+                            data-active="1"
+                        >
+                            <div class="tk-tabs__panel">
+                                <h3 class="tk-tabs__label">macOS</h3>
+                                <p>
+                                    What to do on macOS. Keep each panel about
+                                    the same length so the block does not jump
+                                    height when you switch.
+                                </p>
+                            </div>
+                            <div class="tk-tabs__panel">
+                                <h3 class="tk-tabs__label">Linux</h3>
+                                <p>
+                                    The Linux version of the same instructions.
+                                </p>
+                            </div>
+                            <div class="tk-tabs__panel">
+                                <h3 class="tk-tabs__label">Windows</h3>
+                                <p>And the Windows one.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Terminal with copy</span>
+                    <span class="pv-case__tool">data-tk="terminal"</span>
+                </div>
+                <p class="pv-case__note">
+                    Copy takes the commands only. The <code>$</code> prompt is a
+                    pseudo-element, and <code>data-kind="out"</code> marks
+                    output lines.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-term"
+                            data-tk="terminal"
+                            data-label="bash"
+                            data-copy-label="Copy"
+                        >
+                            <div class="tk-term__body">
+                                <p class="tk-term__line">
+                                    <code>python -m venv env</code>
+                                </p>
+                                <p class="tk-term__line">
+                                    <code>source env/bin/activate</code>
+                                </p>
+                                <p class="tk-term__line">
+                                    <code>pip install -r requirements.txt</code>
+                                </p>
+                                <p class="tk-term__line" data-kind="out">
+                                    Successfully installed Django-6.0.2
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ group: Progress ══════════════════════════════════════════ -->
+            <div class="pv-group">Progress</div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Checklist</span>
+                    <span class="pv-case__tool">data-tk="checklist"</span>
+                </div>
+                <p class="pv-case__note">
+                    Tick a few boxes and reload — the state comes back. Stored
+                    under
+                    <code>tk:preview:checklist:&lt;id&gt;</code>, so it will not
+                    collide with the real site. <em>Clear</em> is disabled until
+                    something is ticked.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-checklist"
+                            data-tk="checklist"
+                            data-tk-id="setup"
+                        >
+                            <p class="tk-checklist__title">Before you start</p>
+                            <ul class="tk-list tk-checklist__list">
+                                <li class="tk-checklist__item">
+                                    Python 3.12 or newer is installed
+                                </li>
+                                <li class="tk-checklist__item">
+                                    A virtual environment is created and
+                                    activated
+                                </li>
+                                <li class="tk-checklist__item">
+                                    Dependencies are installed from
+                                    <code>requirements.txt</code>
+                                </li>
+                                <li class="tk-checklist__item">
+                                    The <code>.env</code> file is filled in
+                                </li>
+                            </ul>
+                        </div>
+                        <div
+                            class="tk-block tk-checklist"
+                            data-tk="checklist"
+                            data-tk-id="throwaway"
+                            data-persist="no"
+                            data-reset-label="Reset"
+                        >
+                            <p class="tk-checklist__title">
+                                Not persisted (data-persist="no")
+                            </p>
+                            <ul class="tk-list tk-checklist__list">
+                                <li class="tk-checklist__item">
+                                    This one starts empty on every reload
+                                </li>
+                                <li class="tk-checklist__item">
+                                    Useful for a demo or a worked example
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Table of contents</span>
+                    <span class="pv-case__tool">data-tk="toc"</span>
+                </div>
+                <p class="pv-case__note">
+                    The list is built from headings in the same article scope;
+                    this preview includes two headings below the block.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview-toc">
+                        <div class="tk-block tk-toc" data-tk="toc" data-variant="inline" data-levels="2,3" data-label="Preview table of contents">
+                            <p class="tk-toc__title">On this page</p>
+                            <p class="tk-toc__fallback">The preview headings are listed here once the page finishes loading.</p>
+                        </div>
+                        <h2>Preview chapter</h2>
+                        <p>This heading becomes the first generated link.</p>
+                        <h3>Preview detail</h3>
+                        <p>This nested heading demonstrates the compact indent.</p>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- ══ group: Recall ════════════════════════════════════════════ -->
+            <div class="pv-group">Recall</div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Quiz</span>
+                    <span class="pv-case__tool">data-tk="quiz"</span>
+                </div>
+                <p class="pv-case__note">
+                    Single and true/false choices judge immediately;
+                    multi-answer questions use Check. Finish the quiz, retry it,
+                    then reload to see the best score persist.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-quiz"
+                            data-tk="quiz"
+                            data-tk-id="preview-quiz"
+                            data-demo="yes"
+                            data-action="https://docs.google.com/forms/d/e/PREVIEW/formResponse"
+                            data-report="entry.PREVIEW_SCORE"
+                            data-check-label="Check"
+                            data-retry-label="Try again"
+                        >
+                            <p class="tk-quiz__title">Quick knowledge check</p>
+                            <div
+                                class="tk-quiz__q"
+                                data-type="single"
+                                data-answer="2"
+                                data-explain="The template renders on the server before the response reaches the browser."
+                            >
+                                <h3 class="tk-quiz__prompt">
+                                    Where does a Django template render?
+                                </h3>
+                                <ul class="tk-list tk-quiz__options">
+                                    <li class="tk-quiz__option">
+                                        Only in the browser
+                                    </li>
+                                    <li class="tk-quiz__option">
+                                        On the server
+                                    </li>
+                                    <li class="tk-quiz__option">
+                                        Inside the database
+                                    </li>
+                                </ul>
+                            </div>
+                            <div
+                                class="tk-quiz__q"
+                                data-type="multi"
+                                data-answer="1,3"
+                                data-explain="Labels name controls, and aria-live announces changing status."
+                            >
+                                <h3 class="tk-quiz__prompt">
+                                    Which two choices improve form
+                                    accessibility?
+                                </h3>
+                                <ul class="tk-list tk-quiz__options">
+                                    <li class="tk-quiz__option">
+                                        Associate controls with labels
+                                    </li>
+                                    <li class="tk-quiz__option">
+                                        Communicate errors only with color
+                                    </li>
+                                    <li class="tk-quiz__option">
+                                        Announce changing status with aria-live
+                                    </li>
+                                </ul>
+                            </div>
+                            <div
+                                class="tk-quiz__q"
+                                data-type="true-false"
+                                data-answer-b64="RmFsc2U="
+                                data-explain="Base64 is reversible obfuscation, not encryption."
+                            >
+                                <h3 class="tk-quiz__prompt">
+                                    Base64 encryption keeps an answer secret.
+                                </h3>
+                                <ul class="tk-list tk-quiz__options">
+                                    <li class="tk-quiz__option">True</li>
+                                    <li class="tk-quiz__option">False</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Flashcards</span>
+                    <span class="pv-case__tool">data-tk="flashcards"</span>
+                </div>
+                <p class="pv-case__note">
+                    Flip reveals the answer; Left/Right work from every deck
+                    control. Disable JavaScript to see the same deck as a
+                    readable glossary.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-cards"
+                            data-tk="flashcards"
+                            data-shuffle="no"
+                            data-flip-label="Show answer"
+                            data-shuffle-label="Shuffle"
+                        >
+                            <p class="tk-cards__title">HTTP flashcards</p>
+                            <div class="tk-cards__card">
+                                <p class="tk-cards__front">
+                                    <strong>What does HTTP 201 mean?</strong>
+                                </p>
+                                <div class="tk-cards__back">
+                                    <p>
+                                        <strong>Created.</strong> The request
+                                        succeeded and created a resource.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="tk-cards__card">
+                                <p class="tk-cards__front">
+                                    <strong
+                                        >Which method is normally idempotent:
+                                        POST or PUT?</strong
+                                    >
+                                </p>
+                                <div class="tk-cards__back">
+                                    <p>
+                                        <strong>PUT.</strong> Repeating it
+                                        should leave the same resulting state.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="tk-cards__card">
+                                <p class="tk-cards__front">
+                                    <strong
+                                        >What does Cache-Control max-age
+                                        measure?</strong
+                                    >
+                                </p>
+                                <div class="tk-cards__back">
+                                    <p>
+                                        The number of seconds a response may be
+                                        considered fresh.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ group: Feedback ══════════════════════════════════════════ -->
+            <div class="pv-group">Feedback</div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Google Form bridge</span>
+                    <span class="pv-case__tool">data-tk="gform"</span>
+                </div>
+                <p class="pv-case__note">
+                    This gallery example uses <code>data-demo="yes"</code>, so
+                    it exercises validation, time/cooldown state and success UI
+                    without making a network request.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-form"
+                            data-tk="gform"
+                            data-tk-id="preview-form"
+                            data-demo="yes"
+                            data-action="https://docs.google.com/forms/d/e/PREVIEW/formResponse"
+                            data-min-time="0"
+                            data-cooldown="0"
+                            data-submit-label="Send feedback"
+                            data-success="Thanks — demo feedback sent."
+                        >
+                            <h3 class="tk-form__title">Send feedback</h3>
+                            <p class="tk-form__intro">
+                                Every control below is drawn from the field data
+                                attributes.
+                            </p>
+                            <div
+                                class="tk-form__field"
+                                data-field="entry.NAME"
+                                data-type="text"
+                                data-label="Name"
+                                data-required="yes"
+                            >
+                                <p class="tk-form__fallback">
+                                    <strong>Name.</strong> Required text field.
+                                </p>
+                            </div>
+                            <div
+                                class="tk-form__field"
+                                data-field="entry.EMAIL"
+                                data-type="email"
+                                data-label="Email"
+                                data-required="yes"
+                            >
+                                <p class="tk-form__fallback">
+                                    <strong>Email.</strong> Required email
+                                    field.
+                                </p>
+                            </div>
+                            <div
+                                class="tk-form__field"
+                                data-field="entry.TOPIC"
+                                data-type="select"
+                                data-label="Topic"
+                                data-required="yes"
+                                data-options="Article feedback|Project question|Other"
+                            >
+                                <p class="tk-form__fallback">
+                                    <strong>Topic.</strong> Choose one of three
+                                    values.
+                                </p>
+                            </div>
+                            <div
+                                class="tk-form__field"
+                                data-field="entry.CONTACT"
+                                data-type="radio"
+                                data-label="May I reply?"
+                                data-required="yes"
+                                data-options="Yes|No"
+                            >
+                                <p class="tk-form__fallback">
+                                    <strong>May I reply?</strong> Yes or no.
+                                </p>
+                            </div>
+                            <div
+                                class="tk-form__field"
+                                data-field="entry.MESSAGE"
+                                data-type="textarea"
+                                data-label="Message"
+                                data-required="yes"
+                                data-rows="4"
+                            >
+                                <p class="tk-form__fallback">
+                                    <strong>Message.</strong> Required long-text
+                                    field.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-case">
+                <div class="pv-case__head">
+                    <span class="pv-case__name">Helpful rating</span>
+                    <span class="pv-case__tool">data-tk="rating"</span>
+                </div>
+                <p class="pv-case__note">
+                    Demo transport is local-only. The selected vote is
+                    remembered under the preview page namespace.
+                </p>
+                <div class="pv-stage">
+                    <div class="blog-content ck-content" data-tk-page="preview">
+                        <div
+                            class="tk-block tk-rating"
+                            data-tk="rating"
+                            data-tk-id="preview-rating"
+                            data-demo="yes"
+                            data-action="https://docs.google.com/forms/d/e/PREVIEW/formResponse"
+                            data-field="entry.RATING"
+                            data-label="Was this article helpful?"
+                            data-cooldown="0"
+                            data-success="Thanks for the feedback."
+                        >
+                            <p class="tk-rating__prompt">
+                                Was this article helpful?
+                            </p>
+                            <p class="tk-rating__fallback">
+                                Choose Helpful or Not helpful when JavaScript is
+                                available.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOOLKIT-PREVIEW-END -->
+        </div>
+
+        <script src="../../static/js/content-tools.js"></script>
+        <script>
+            // Surface toggle. `.tk-surface-light` is the same token override the
+            // CKEditor editing area receives, so this previews the admin appearance.
+            (function () {
+                var btn = document.getElementById("pv-surface");
+                btn.addEventListener("click", function () {
+                    var light = document.body.classList.toggle("pv-light");
+                    Array.prototype.forEach.call(
+                        document.querySelectorAll(".pv-stage .blog-content"),
+                        function (stage) {
+                            stage.classList.toggle("tk-surface-light", light);
+                        },
+                    );
+                    btn.textContent = light
+                        ? "Switch to dark surface"
+                        : "Switch to light surface";
+                });
+            })();
+        </script>
+    </body>
+</html>

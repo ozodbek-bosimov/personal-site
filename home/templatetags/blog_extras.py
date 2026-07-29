@@ -30,6 +30,17 @@ _IFRAME_RE = re.compile(
 )
 
 
+# The content toolkit stylesheet is useful for every `data-tk` block, but its
+# runtime is only needed by blocks that promote stored prose into controls or
+# retain browser-local state.  Keeping this list here lets templates skip the
+# 20 KB (gzip) runtime for purely presentational blocks such as callouts,
+# quotes and CTA banners.
+_INTERACTIVE_TOOL_RE = re.compile(
+    r'''data-tk\s*=\s*["'](?:accordion|checklist|feedback|flashcards|gform|pros-cons|quiz|rating|spoiler|tabs|terminal|toc)["']''',
+    re.IGNORECASE,
+)
+
+
 @register.filter(name="lazy_iframes")
 def lazy_iframes(content):
     """Replace iframes with placeholder + <template> for true lazy loading.
@@ -60,3 +71,14 @@ def lazy_iframes(content):
 
     result = _IFRAME_RE.sub(_process, content)
     return mark_safe(result)
+
+
+@register.filter(name="needs_content_tools_runtime")
+def needs_content_tools_runtime(content):
+    """Return whether stored rich text needs the interactive toolkit runtime.
+
+    This intentionally recognises legacy ``feedback`` blocks alongside the
+    current snippet names, so existing posts keep working while their markup
+    is migrated to the canonical Google Form bridge.
+    """
+    return bool(content and _INTERACTIVE_TOOL_RE.search(content))

@@ -1,0 +1,17 @@
+<!-- tk:meta
+name: Pull quote
+tool: quote
+group: Notes & callouts
+description: A quotation set off from the body text, with an attribution line for name and role.
+interactive: no
+param: quote text :: p inside blockquote :: — :: One or more paragraphs. The opening curly quote is CSS, so do not type one.
+param: attribution :: strong + span :: — :: Delete the whole p.tk-quote__cite line for an unattributed quote.
+a11y: A real blockquote, announced as a quotation. The decorative quote mark is a pseudo-element and is not read.
+limits: Overrides the blockquote styling from base.css on purpose, so it will not match a plain editor blockquote. Pick one or the other per post.
+-->
+<div class="tk-block tk-quote" data-tk="quote">
+    <blockquote class="tk-quote__body">
+        <p>The sentence worth setting apart from everything around it. Long enough to earn the space, short enough to stay quotable.</p>
+    </blockquote>
+    <p class="tk-quote__cite"><strong>Name Surname</strong><span class="tk-quote__role">Role, Company</span></p>
+</div>

@@ -1,0 +1,32 @@
+<!-- tk:meta
+name: Accordion / FAQ
+tool: accordion
+group: Disclosure
+description: A stack of collapsible question-and-answer rows. Good for an FAQ section or a set of optional details.
+interactive: yes
+param: data-single :: yes | no :: yes :: When yes, opening one row closes the others.
+param: item data-open :: yes | no :: no :: Put it on a .tk-accordion__item to have that row start expanded.
+param: question :: h3 text :: — :: One h3.tk-accordion__q per item. The runtime promotes it into a button inside the heading.
+a11y: Follows the ARIA accordion pattern — h3 > button with aria-expanded and aria-controls, panels as labelled regions. Up/Down arrows move between rows, Home and End jump to the ends.
+limits: Questions stay h3, so keep them under an h2 in the page outline. With JavaScript off every question and answer is simply visible.
+-->
+<div class="tk-block tk-accordion" data-tk="accordion" data-single="yes">
+    <div class="tk-accordion__item" data-open="yes">
+        <h3 class="tk-accordion__q">Does this still work without JavaScript?</h3>
+        <div class="tk-accordion__a">
+            <p>Yes. Every question is a real heading and every answer sits directly beneath it, so the block degrades into an ordinary readable list.</p>
+        </div>
+    </div>
+    <div class="tk-accordion__item">
+        <h3 class="tk-accordion__q">Can I keep more than one row open?</h3>
+        <div class="tk-accordion__a">
+            <p>Set <code>data-single="no"</code> on the block and each row toggles on its own.</p>
+        </div>
+    </div>
+    <div class="tk-accordion__item">
+        <h3 class="tk-accordion__q">What can go inside an answer?</h3>
+        <div class="tk-accordion__a">
+            <p>Paragraphs, lists, links, images — anything the editor produces.</p>
+        </div>
+    </div>
+</div>

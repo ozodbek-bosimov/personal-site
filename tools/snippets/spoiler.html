@@ -1,0 +1,17 @@
+<!-- tk:meta
+name: Spoiler
+tool: spoiler
+group: Disclosure
+description: Hides an answer, a solution or a long aside behind a single click.
+interactive: yes
+param: data-open :: yes | no :: no :: Whether the block starts expanded.
+param: summary paragraph :: text :: Show the answer :: The clickable label. Inline formatting inside it survives — the runtime moves the nodes, it does not copy the text.
+a11y: The runtime turns the summary into a real button with aria-expanded and aria-controls; the body is a labelled group. Enter and Space work because it is a genuine button.
+limits: With JavaScript off both the summary and the body are plain visible text. That is deliberate — a spoiler that can never be opened is worse than no spoiler.
+-->
+<div class="tk-block tk-spoiler" data-tk="spoiler" data-open="no">
+    <p class="tk-spoiler__summary">Show the answer</p>
+    <div class="tk-spoiler__body">
+        <p>Whatever should not be visible straight away. A solution to an exercise, a long tangent, the punchline.</p>
+    </div>
+</div>

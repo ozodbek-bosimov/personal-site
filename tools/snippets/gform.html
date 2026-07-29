@@ -1,0 +1,38 @@
+<!-- tk:meta
+name: Google Form bridge
+tool: gform
+group: Feedback
+description: Renders a validated form from data attributes and sends it to a Google Form without exposing editor-hostile controls in stored content.
+interactive: yes
+param: data-action :: Google Forms formResponse URL :: — :: HTTPS endpoint copied from the target form, ending in /formResponse.
+param: field data-field :: entry.<number> :: — :: Google Forms entry id that receives this field.
+param: field data-type :: text | email | url | tel | number | date | textarea | select | radio | checkbox :: text :: Runtime control type.
+param: field data-label :: text :: — :: Visible and accessible control label.
+param: field data-required :: yes | no :: no :: Enables required validation.
+param: field data-options :: values separated by | :: — :: Required for select, radio and checkbox fields.
+param: data-min-time :: seconds :: 3 :: Rejects submissions completed implausibly quickly.
+param: data-cooldown :: seconds :: 30 :: Minimum wait after a successful send in this browser.
+param: data-submit-label :: text :: Send :: Submit action label.
+param: data-success / data-error :: text :: built-in messages :: Success and transport-error status messages.
+a11y: Runtime labels are explicitly associated with controls, required fields expose aria-required, errors are linked with aria-describedby, the first invalid control receives focus, and status uses a polite live region.
+limits: Google Forms no-cors responses are opaque, so success means the browser dispatched the request, not that Google accepted a specific value. Replace every REPLACE placeholder before publishing.
+-->
+<div class="tk-block tk-form" data-tk="gform" data-tk-id="contact" data-action="https://docs.google.com/forms/d/e/REPLACE_FORM_ID/formResponse" data-min-time="3" data-cooldown="30" data-submit-label="Send feedback" data-success="Thanks — your feedback was sent." data-error="Could not send your feedback. Please try again.">
+    <h3 class="tk-form__title">Send feedback</h3>
+    <p class="tk-form__intro">Fields marked with an asterisk are required.</p>
+    <div class="tk-form__field" data-field="entry.REPLACE_NAME" data-type="text" data-label="Name" data-required="yes" data-autocomplete="name">
+        <p class="tk-form__fallback"><strong>Name.</strong> Required text field.</p>
+    </div>
+    <div class="tk-form__field" data-field="entry.REPLACE_EMAIL" data-type="email" data-label="Email" data-required="yes" data-autocomplete="email">
+        <p class="tk-form__fallback"><strong>Email.</strong> Required email field.</p>
+    </div>
+    <div class="tk-form__field" data-field="entry.REPLACE_TOPIC" data-type="select" data-label="Topic" data-required="yes" data-options="Article feedback|Project question|Other">
+        <p class="tk-form__fallback"><strong>Topic.</strong> Choose article feedback, project question or other.</p>
+    </div>
+    <div class="tk-form__field" data-field="entry.REPLACE_AREAS" data-type="checkbox" data-label="Areas involved" data-options="Django|APIs|Testing">
+        <p class="tk-form__fallback"><strong>Areas involved.</strong> Django, APIs and/or Testing.</p>
+    </div>
+    <div class="tk-form__field" data-field="entry.REPLACE_MESSAGE" data-type="textarea" data-label="Message" data-required="yes" data-rows="5">
+        <p class="tk-form__fallback"><strong>Message.</strong> Required long-text field.</p>
+    </div>
+</div>

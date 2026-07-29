@@ -171,7 +171,12 @@ class BlogAdmin(admin.ModelAdmin):
     form = BlogAdminForm
 
     class Media:
-        js = ("js/admin_thumbnail.js", "js/admin_ckeditor_fix.js")
+        js = (
+            "js/admin_thumbnail.js",
+            "js/admin_ckeditor_fix.js",
+            "js/generated/tools-catalog.js?v=102",
+            "js/admin_tools_picker.js?v=102",
+        )
 
     list_display = ["title", "topic", "created_at_display", "reading_time", "slug"]
     list_filter = ["topic"]
@@ -267,7 +272,11 @@ class AboutMeAdmin(admin.ModelAdmin):
     form = AboutMeAdminForm
 
     class Media:
-        js = ("js/admin_ckeditor_fix.js",)
+        js = (
+            "js/admin_ckeditor_fix.js",
+            "js/generated/tools-catalog.js?v=102",
+            "js/admin_tools_picker.js?v=102",
+        )
 
     readonly_fields = ("profile_image_preview", "hero_image_preview")
     fieldsets = (

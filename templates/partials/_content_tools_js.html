@@ -1,0 +1,13 @@
+{% load static %}
+{% comment %}
+Content Toolkit runtime.
+
+Must sit INSIDE {% block content %} — hx-boost re-executes scripts found in
+swapped content, which is how the toolkit comes back to life after a boosted
+navigation. Re-execution is harmless: the runtime returns early if it is
+already loaded, and its own htmx:afterSettle listener handles the new nodes.
+{% endcomment %}
+<script
+    data-cfasync="false"
+    src="{% static 'js/content-tools.js' %}?v={{ STATIC_ASSET_VERSION }}"
+></script>

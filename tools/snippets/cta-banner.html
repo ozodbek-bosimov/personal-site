@@ -1,0 +1,18 @@
+<!-- tk:meta
+name: CTA banner
+tool: cta-banner
+group: Actions
+description: Full-width prompt with a headline, a line of supporting copy and one or two buttons.
+interactive: no
+param: data-variant :: solid | gradient | outline :: gradient :: Background treatment of the banner.
+param: buttons :: 1-2 anchors :: 1 :: Add a second anchor inside p.tk-cta__actions for a secondary action.
+a11y: The headline is an h3, so it takes part in the document outline. Keep it under the h2 of its section.
+limits: Buttons stack full-width below 34rem. Three or more actions crowd the banner — use a button row instead.
+-->
+<div class="tk-block tk-cta" data-tk="cta-banner" data-variant="gradient">
+    <div class="tk-cta__body">
+        <h3 class="tk-cta__title">Want the whole checklist as a PDF?</h3>
+        <p class="tk-cta__text">One short line explaining what the reader gets and why it is worth the click.</p>
+    </div>
+    <p class="tk-cta__actions"><a class="tk-btn tk-btn--primary" href="#">Get the PDF</a></p>
+</div>

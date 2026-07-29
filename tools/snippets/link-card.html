@@ -1,0 +1,16 @@
+<!-- tk:meta
+name: Link card
+tool: link-card
+group: Cards
+description: A bordered card that links out, with room for a title, a short description and the host name.
+interactive: no
+param: href :: url :: https://example.com :: Target of the card. The whole card is clickable, not just the title.
+param: host paragraph :: text :: example.com :: Optional. Delete p.tk-linkcard__host to drop the footer line.
+a11y: One link, one accessible name — the title text. The link-icon and hit area are CSS, so nothing extra is announced.
+limits: Exactly one link per card. A second link would sit under the invisible full-card hit area and be unreachable.
+-->
+<div class="tk-block tk-linkcard" data-tk="link-card">
+    <p class="tk-linkcard__title"><a class="tk-linkcard__link" href="https://example.com" target="_blank" rel="noopener noreferrer">Title of the page you are pointing at</a></p>
+    <p class="tk-linkcard__desc">One or two lines saying what the reader will find on the other end, so the click is an informed one.</p>
+    <p class="tk-linkcard__host">example.com</p>
+</div>

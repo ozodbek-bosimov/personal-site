@@ -34,7 +34,7 @@ if not SECRET_KEY:
         )
 
 # Asset Versioning
-STATIC_ASSET_VERSION = os.getenv("APP_STATIC_ASSET_VERSION", "20260624_04")
+STATIC_ASSET_VERSION = os.getenv("APP_STATIC_ASSET_VERSION", "20260728_35")
 
 # Allowed Hosts & CSRF
 _allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS")
@@ -315,7 +315,7 @@ CKEDITOR_5_CONFIGS = {
 }
 
 # CKEditor Storage & Custom CSS
-CKEDITOR_5_CUSTOM_CSS = "css/ckeditor_admin_fix.css"
+CKEDITOR_5_CUSTOM_CSS = "css/ckeditor_admin_fix.css?v=18"
 CKEDITOR_5_UPLOAD_FILE_TYPES = ["jpeg", "jpg", "png", "gif", "bmp", "webp", "svg"]
 CKEDITOR_5_ALLOW_ALL_FILE_TYPES = False
 CKEDITOR_5_FILE_STORAGE = "home.storage.CKEditor5Storage"

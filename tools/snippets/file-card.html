@@ -1,0 +1,18 @@
+<!-- tk:meta
+name: File card
+tool: file-card
+group: Cards
+description: Download row for an attachment, with a file-type badge and a size/format line.
+interactive: no
+param: data-ext :: any short string :: pdf :: Text shown in the badge. Rendered straight from the attribute via CSS, so nothing is duplicated as markup.
+param: href :: url :: # :: File URL. Point it at /media/... for an uploaded file or /shared/... for a shared one.
+param: meta paragraph :: text :: PDF · 1.4 MB :: Free-form. Type the real size yourself; nothing measures it.
+a11y: The badge and download arrow are CSS-generated. The link text should name the file, not say "click here".
+limits: One link per card (full-card hit area, same as the link card). Uploading the file is a separate step — this block only points at it.
+-->
+<div class="tk-block tk-filecard" data-tk="file-card" data-ext="pdf">
+    <div class="tk-filecard__body">
+        <p class="tk-filecard__name"><a class="tk-filecard__link" href="#">Specification v2.pdf</a></p>
+        <p class="tk-filecard__meta">PDF &middot; 1.4 MB</p>
+    </div>
+</div>

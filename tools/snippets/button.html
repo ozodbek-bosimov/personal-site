@@ -1,0 +1,18 @@
+<!-- tk:meta
+name: Buttons / CTA row
+tool: button
+group: Actions
+description: A row of link-buttons in four styles. Keep the ones you need and delete the rest.
+interactive: no
+param: variant class :: tk-btn--primary | tk-btn--gradient | tk-btn--ghost | tk-btn--icon :: tk-btn--primary :: Second class on the anchor. Chooses the look.
+param: data-tk-icon :: arrow | download | external | play | mail | check | star | code :: arrow :: Leading glyph. Only read by tk-btn--icon.
+param: href :: url :: # :: Where the button goes. Add target/rel yourself for external links.
+a11y: These are real links, so keyboard and screen-reader behaviour is the browser's. The glyph is CSS-generated and stays out of the accessible name.
+limits: Anchors only — a <button> would be stripped on save. For an action that needs JavaScript, use a block that ships its own control (terminal, quiz, gform).
+-->
+<div class="tk-block tk-btn-row" data-tk="button">
+    <a class="tk-btn tk-btn--primary" href="#">Primary action</a>
+    <a class="tk-btn tk-btn--gradient" href="#">Gradient</a>
+    <a class="tk-btn tk-btn--ghost" href="#">Ghost</a>
+    <a class="tk-btn tk-btn--icon tk-btn--ghost" href="#" data-tk-icon="download">Download</a>
+</div>

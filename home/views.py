@@ -1,16 +1,22 @@
 import ipaddress
+import hashlib
+import json
 import logging
 import operator
 import re
+import urllib.error
+import urllib.parse
 import urllib.request
 from functools import reduce
 
+from django.contrib.admin.views.decorators import staff_member_required
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.templatetags.static import static
+from django.views.decorators.http import require_POST
 
 from home.models import AboutMe, Blog, Experience, ExperienceRole, Project, Skill
 
@@ -19,6 +25,37 @@ logger = logging.getLogger(__name__)
 # Sentinel: distinguishes "key not in cache" from "key cached with value None".
 # cache.get() returns None in both cases, so we pass this as the default instead.
 _CACHE_MISS = object()
+
+
+# Google Form field detection is an admin-only convenience feature.  Keep its
+# network work small because this site deliberately runs with a single worker.
+_FORM_DETECT_RATE_LIMIT_REQUESTS = 6
+_FORM_DETECT_RATE_LIMIT_WINDOW_SECONDS = 60
+_FORM_DETECT_TIMEOUT_SECONDS = 5
+_FORM_DETECT_MAX_RESPONSE_BYTES = 1 * 1024 * 1024
+_FORM_DETECT_CACHE_SECONDS = 10 * 60
+_GOOGLE_FORM_HOSTS = frozenset({"docs.google.com", "forms.gle"})
+_GOOGLE_PUBLISHED_FORM_PATH_RE = re.compile(
+    r"^/forms/(?:u/\d+/)?d/e/(?P<form_id>[A-Za-z0-9_-]+)"
+    r"(?:/(?:viewform|edit|preview|formResponse))?/?$"
+)
+_GOOGLE_EDIT_FORM_PATH_RE = re.compile(
+    r"^/forms/(?:u/\d+/)?d/(?P<form_id>[A-Za-z0-9_-]+)"
+    r"(?:/(?:viewform|edit|preview|formResponse))?/?$"
+)
+_GOOGLE_SHORT_LINK_PATH_RE = re.compile(r"^/[A-Za-z0-9_-]{1,128}/?$")
+
+
+class _UnsafeGoogleFormURL(ValueError):
+    """Raised when a form URL or redirect leaves the Google Forms allowlist."""
+
+
+class _GoogleFormResponseTooLarge(ValueError):
+    """Raised when a remote response exceeds the bounded inspection size."""
+
+
+class _GoogleFormFetchError(RuntimeError):
+    """Raised for upstream failures without exposing transport details to clients."""
 
 
 def _is_valid_ip(ip):
@@ -421,3 +458,274 @@ def leetcode_proxy(request):
             '<svg xmlns="http://www.w3.org/2000/svg" width="500" height="320"><rect width="100%" height="100%" fill="#0f172a"/><text x="50%" y="50%" fill="#9ca3af" text-anchor="middle" font-family="sans-serif">Failed to load LeetCode stats</text></svg>',
             content_type="image/svg+xml",
         )
+
+
+def _parse_google_form_url(url):
+    """Return safe URL parts for a supported Google Form URL, otherwise None."""
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        port = parsed.port  # Accessing it validates malformed ports too.
+    except ValueError:
+        return None
+
+    host = (parsed.hostname or "").lower()
+    if (
+        parsed.scheme.lower() != "https"
+        or parsed.username
+        or parsed.password
+        or port not in (None, 443)
+        or host not in _GOOGLE_FORM_HOSTS
+    ):
+        return None
+
+    if host == "docs.google.com":
+        if not (
+            _GOOGLE_PUBLISHED_FORM_PATH_RE.fullmatch(parsed.path)
+            or _GOOGLE_EDIT_FORM_PATH_RE.fullmatch(parsed.path)
+        ):
+            return None
+    elif not _GOOGLE_SHORT_LINK_PATH_RE.fullmatch(parsed.path):
+        return None
+
+    return parsed
+
+
+def _normalise_google_form_url(raw_url):
+    """Validate an editor-supplied URL and return one safe fetch target."""
+    raw_url = (raw_url or "").strip()
+    if not raw_url or len(raw_url) > 2048:
+        return None
+
+    if "://" not in raw_url:
+        raw_url = f"https://{raw_url}"
+
+    parsed = _parse_google_form_url(raw_url)
+    if not parsed:
+        return None
+
+    host = (parsed.hostname or "").lower()
+    published_match = _GOOGLE_PUBLISHED_FORM_PATH_RE.fullmatch(parsed.path)
+    if host == "docs.google.com" and published_match:
+        return (
+            "https://docs.google.com/forms/d/e/"
+            f"{published_match.group('form_id')}/viewform"
+        )
+
+    edit_match = _GOOGLE_EDIT_FORM_PATH_RE.fullmatch(parsed.path)
+    if host == "docs.google.com" and edit_match:
+        return (
+            "https://docs.google.com/forms/d/"
+            f"{edit_match.group('form_id')}/viewform"
+        )
+
+    # A forms.gle link needs its Google-owned redirect to resolve the form ID.
+    return urllib.parse.urlunsplit(("https", "forms.gle", parsed.path, parsed.query, ""))
+
+
+class _GoogleFormsRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Follow redirects only while they remain inside the Forms allowlist."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        redirect_url = urllib.parse.urljoin(req.full_url, newurl)
+        if not _parse_google_form_url(redirect_url):
+            raise _UnsafeGoogleFormURL("Redirect target is outside Google Forms")
+        return super().redirect_request(req, fp, code, msg, headers, redirect_url)
+
+
+def _fetch_google_form_html(url):
+    """Fetch one validated Google Form while bounding latency and response size."""
+    headers = {
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Encoding": "identity",
+        "User-Agent": "Mozilla/5.0 (compatible; form-field-detector/1.0)",
+    }
+    request = urllib.request.Request(url, headers=headers)
+    opener = urllib.request.build_opener(_GoogleFormsRedirectHandler())
+
+    try:
+        with opener.open(request, timeout=_FORM_DETECT_TIMEOUT_SECONDS) as response:
+            final_url = response.geturl()
+            if not _parse_google_form_url(final_url):
+                raise _UnsafeGoogleFormURL("Final URL is outside Google Forms")
+
+            content_length = response.headers.get("Content-Length")
+            if content_length:
+                try:
+                    declared_length = int(content_length)
+                except ValueError:
+                    # Ignore malformed upstream metadata; the bounded read below
+                    # remains authoritative.
+                    pass
+                else:
+                    if declared_length > _FORM_DETECT_MAX_RESPONSE_BYTES:
+                        raise _GoogleFormResponseTooLarge
+
+            content = response.read(_FORM_DETECT_MAX_RESPONSE_BYTES + 1)
+    except (_UnsafeGoogleFormURL, _GoogleFormResponseTooLarge):
+        raise
+    except (OSError, TimeoutError, urllib.error.URLError) as exc:
+        raise _GoogleFormFetchError from exc
+
+    if len(content) > _FORM_DETECT_MAX_RESPONSE_BYTES:
+        raise _GoogleFormResponseTooLarge
+
+    return content.decode("utf-8", errors="replace"), final_url
+
+
+def _google_form_response_url(url):
+    """Build the Google formResponse URL only from a validated final URL."""
+    parsed = _parse_google_form_url(url)
+    if not parsed or (parsed.hostname or "").lower() != "docs.google.com":
+        return ""
+
+    published_match = _GOOGLE_PUBLISHED_FORM_PATH_RE.fullmatch(parsed.path)
+    if published_match:
+        return (
+            "https://docs.google.com/forms/d/e/"
+            f"{published_match.group('form_id')}/formResponse"
+        )
+
+    edit_match = _GOOGLE_EDIT_FORM_PATH_RE.fullmatch(parsed.path)
+    if edit_match:
+        return (
+            "https://docs.google.com/forms/d/"
+            f"{edit_match.group('form_id')}/formResponse"
+        )
+    return ""
+
+
+def _extract_google_form_fields(html):
+    """Extract the small field subset required by the admin picker."""
+    match = re.search(
+        r"var\s+FB_PUBLIC_LOAD_DATA_\s*=\s*(\[.*?\]);\s*</script>",
+        html,
+        re.DOTALL,
+    )
+    if not match:
+        return None
+
+    try:
+        data = json.loads(match.group(1))
+        questions = data[1][1]
+    except (IndexError, TypeError, json.JSONDecodeError):
+        return None
+
+    if not isinstance(questions, list):
+        return None
+
+    fields = []
+    for question in questions:
+        try:
+            title = question[1] or ""
+            entry = question[4][0]
+            entry_id = entry[0]
+            if not isinstance(title, str) or not isinstance(entry_id, (str, int)):
+                continue
+            is_required = len(entry) > 2 and entry[2] == 1
+            raw_type = question[3] if len(question) > 3 else 0
+        except (IndexError, TypeError):
+            continue
+
+        fields.append(
+            {
+                "title": title,
+                "entry": f"entry.{entry_id}",
+                "type": "textarea" if raw_type == 1 else "text",
+                "required": is_required,
+            }
+        )
+    return fields
+
+
+def _form_detection_rate_limited(request):
+    """Rate-limit the expensive outbound request per authenticated staff user."""
+    cache_key = f"form_detect_rate_limit_user_{request.user.pk}"
+    if cache.add(cache_key, 1, _FORM_DETECT_RATE_LIMIT_WINDOW_SECONDS):
+        return False
+
+    try:
+        request_count = cache.incr(cache_key)
+    except ValueError:
+        # The key can expire after add() fails but before incr().  Treat this as
+        # the start of a fresh window rather than returning an internal error.
+        cache.set(cache_key, 1, _FORM_DETECT_RATE_LIMIT_WINDOW_SECONDS)
+        request_count = 1
+    return request_count > _FORM_DETECT_RATE_LIMIT_REQUESTS
+
+
+def _form_detection_cache_key(url):
+    """Keep cache keys short and independent of editor-supplied text."""
+    digest = hashlib.sha256(url.encode("utf-8")).hexdigest()
+    return f"form_detect_result_{digest}"
+
+
+@staff_member_required
+@require_POST
+def detect_form_fields(request):
+    """Safely inspect a published Google Form for the admin content picker."""
+    fetch_url = _normalise_google_form_url(request.POST.get("url"))
+    if not fetch_url:
+        return JsonResponse(
+            {"error": "Enter a valid HTTPS Google Forms URL."}, status=400
+        )
+
+    result_cache_key = _form_detection_cache_key(fetch_url)
+    cached_result = cache.get(result_cache_key)
+    if cached_result is not None:
+        return JsonResponse(cached_result)
+
+    # Only a cache miss can lead to an outbound request, so the rate limit is
+    # deliberately placed here rather than penalising a quick cached lookup.
+    if _form_detection_rate_limited(request):
+        return JsonResponse(
+            {"error": "Too many detection requests. Please wait a minute and try again."},
+            status=429,
+        )
+
+    try:
+        html, final_url = _fetch_google_form_html(fetch_url)
+    except _UnsafeGoogleFormURL:
+        return JsonResponse(
+            {
+                "error": (
+                    "The form link redirected outside Google Forms. "
+                    "Please use a published Google Form URL."
+                )
+            },
+            status=400,
+        )
+    except _GoogleFormResponseTooLarge:
+        return JsonResponse(
+            {"error": "The form response is too large to inspect."}, status=400
+        )
+    except _GoogleFormFetchError:
+        return JsonResponse(
+            {
+                "error": (
+                    "Unable to fetch this Google Form. Make sure it is published "
+                    "and accepting responses."
+                )
+            },
+            status=502,
+        )
+    except Exception:
+        logger.warning("Google Form field detection failed", exc_info=True)
+        return JsonResponse(
+            {"error": "Unable to inspect this Google Form right now."}, status=502
+        )
+
+    fields = _extract_google_form_fields(html)
+    if fields is None:
+        return JsonResponse(
+            {
+                "error": (
+                    "Could not read form fields. Make sure the form is published "
+                    "and accepting responses."
+                )
+            },
+            status=400,
+        )
+
+    result = {"fields": fields, "action": _google_form_response_url(final_url)}
+    cache.set(result_cache_key, result, _FORM_DETECT_CACHE_SECONDS)
+    return JsonResponse(result)

@@ -1,0 +1,17 @@
+<!-- tk:meta
+name: Callout
+tool: callout
+group: Notes & callouts
+description: Coloured note box for an aside, a tip, a caveat or a result. Five variants share one layout.
+interactive: no
+param: data-variant :: info | tip | warning | danger | success :: info :: Sets the rail colour, background wash and badge glyph.
+param: title paragraph :: text :: "Good to know" :: Optional. Delete the whole p.tk-callout__title line to drop the heading.
+a11y: The badge glyph is drawn with CSS content, so it stays out of the accessibility tree and out of copied text.
+limits: Body takes paragraphs, lists and inline formatting. Do not nest another data-tk block inside it.
+-->
+<div class="tk-block tk-callout" data-tk="callout" data-variant="info">
+    <div class="tk-callout__body">
+        <p class="tk-callout__title">Good to know</p>
+        <p>Replace this sentence with the note itself. Two or three lines reads best — anything longer belongs in the body text.</p>
+    </div>
+</div>

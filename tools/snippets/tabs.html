@@ -1,0 +1,25 @@
+<!-- tk:meta
+name: Tabs
+tool: tabs
+group: Disclosure
+description: Shows one panel at a time from a strip of tabs. Best for the same thing in several languages, tools or operating systems.
+interactive: yes
+param: data-active :: 1-based index :: 1 :: Which panel is open when the page loads.
+param: panel label :: h3 text :: — :: One h3.tk-tabs__label per panel. Its text becomes the tab name and the heading is then hidden.
+a11y: Proper tablist/tab/tabpanel roles with aria-selected and a roving tabindex, so Tab moves past the strip into the panel. Left/Right arrows switch panel, Home and End jump to the ends.
+limits: Needs at least two panels or the block is left alone. With JavaScript off every panel is visible with its label showing, which reads as a run of subsections.
+-->
+<div class="tk-block tk-tabs" data-tk="tabs" data-active="1">
+    <div class="tk-tabs__panel">
+        <h3 class="tk-tabs__label">macOS</h3>
+        <p>What to do on macOS. Keep each panel about the same length so the block does not jump height when you switch.</p>
+    </div>
+    <div class="tk-tabs__panel">
+        <h3 class="tk-tabs__label">Linux</h3>
+        <p>The Linux version of the same instructions.</p>
+    </div>
+    <div class="tk-tabs__panel">
+        <h3 class="tk-tabs__label">Windows</h3>
+        <p>And the Windows one.</p>
+    </div>
+</div>

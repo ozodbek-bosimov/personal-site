@@ -1,3 +1,7 @@
+/* Pull in the content toolkit styles so blocks are styled inside the admin
+   CKEditor editing surface. The @import must be at the very top. */
+@import "content-tools.css?v=3";
+
 /* Keep CKEditor fully within admin form width and prevent first-render overflow. */
 .ck-editor-container,
 .ck.ck-editor,
@@ -10,8 +14,11 @@
 }
 
 /* Ensure editing area can scroll horizontally instead of pushing outside viewport. */
-.ck.ck-editor__editable {
+.ck.ck-editor__editable,
+.ck-source-editing-area,
+.ck-source-editing-area textarea {
     overflow-x: auto;
+    min-height: 400px !important;
 }
 
 /* Embedded media should stay in normal document flow and not overlap following text. */
@@ -68,4 +75,337 @@
 
 .ck-content figure.media + * {
     clear: both;
+}
+
+/* ── toolkit picker panel ──────────────────────────────────────────── */
+
+.tk-picker {
+    margin-bottom: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+}
+
+.tk-picker__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px solid #3b4a62;
+    border-radius: 6px;
+    background: #1e293b;
+    color: #93c5fd;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.tk-picker__toggle:hover {
+    background: #293548;
+    border-color: #60a5fa;
+}
+
+.tk-picker__body {
+    margin-top: 8px;
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background: #0f172a;
+    max-height: 460px;
+    overflow-y: auto;
+}
+
+.tk-picker__search {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.tk-picker__search:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+}
+
+.tk-picker__group-title {
+    margin: 16px 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #1e293b;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.tk-picker__group:first-child .tk-picker__group-title {
+    margin-top: 0;
+}
+
+.tk-picker__card {
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    background: #1e293b;
+    transition: border-color 0.15s;
+}
+
+.tk-picker__card:hover {
+    border-color: #334155;
+}
+
+.tk-picker__card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.tk-picker__card-name {
+    color: #e2e8f0;
+    font-size: 13px;
+}
+
+.tk-picker__badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #1e3a5f;
+    color: #60a5fa;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.tk-picker__card-desc {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.tk-picker__params {
+    margin-top: 6px;
+    font-size: 11px;
+}
+
+.tk-picker__params summary {
+    cursor: pointer;
+    color: #64748b;
+    font-size: 11px;
+}
+
+.tk-picker__param-table {
+    width: 100%;
+    margin-top: 4px;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.tk-picker__param-table th {
+    text-align: left;
+    padding: 3px 6px;
+    color: #64748b;
+    border-bottom: 1px solid #334155;
+    font-weight: 600;
+}
+
+.tk-picker__param-table td {
+    padding: 3px 6px;
+    color: #94a3b8;
+    border-bottom: 1px solid #1e293b;
+}
+
+.tk-picker__param-table code {
+    color: #93c5fd;
+    font-size: 11px;
+}
+
+.tk-picker__insert {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 14px;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    background: #0f172a;
+    color: #93c5fd;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.tk-picker__insert:hover {
+    background: #1e293b;
+    border-color: #60a5fa;
+}
+
+.tk-picker__insert--done {
+    background: #064e3b;
+    border-color: #10b981;
+    color: #34d399;
+}
+
+/* ── Modal overlay for builder ──────────────────────────────────────────── */
+.tk-picker-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tk-picker-modal {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    width: 600px;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+}
+
+.tk-picker-modal__header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #1e293b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tk-picker-modal__header h3 {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.tk-picker-modal__close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+}
+.tk-picker-modal__close:hover { color: #f87171; }
+
+.tk-picker-modal__body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.tk-picker-modal__footer {
+    padding: 16px 20px;
+    border-top: 1px solid #1e293b;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* ── Form elements in modal ─────────────────────────────────────────────── */
+.tk-field {
+    margin-bottom: 16px;
+}
+.tk-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+}
+.tk-field input, .tk-field textarea, .tk-field select,
+.tk-item-box input, .tk-item-box textarea, .tk-item-box select {
+    width: 100%;
+    padding: 8px 12px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    color: #f1f5f9;
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+.tk-field textarea, .tk-item-box textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.tk-item-box {
+    background: #1e293b;
+    border: 1px solid #334155;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tk-picker-btn {
+    background: #334155;
+    color: #e2e8f0;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.tk-picker-btn:hover { background: #475569; }
+
+.tk-item-box .t-rem {
+    align-self: flex-end;
+    background: transparent;
+    color: #f87171;
+    padding: 4px 8px;
+}
+.tk-item-box .t-rem:hover { background: #451a1a; }
+
+/* ── Tab bar in picker ─────────────────────────────────────────────────── */
+.tk-picker__tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 8px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.tk-picker__tab {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94a3b8;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+
+.tk-picker__tab:hover {
+    color: #f1f5f9;
+    background: #1e293b;
+}
+
+.tk-picker__tab--active {
+    background: #1e293b;
+    color: #3b82f6;
+    border-color: #334155;
 }

@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import tempfile
+import urllib.request
 from io import StringIO
+from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.management import call_command
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
+from home import views
 from home.context_processors import USED_TAGS_CACHE_KEY, used_tags
 from home.models import AboutMe, Blog
 from home.templatetags.blog_extras import reading_time
@@ -299,3 +303,370 @@ class ViewsSmokeTests(TestCase):
         self.assertContains(resp, "blogpost.js")
         self.assertContains(resp, "twitter.com/test/status/1234567890")
         self.assertNotContains(resp, "widgets.js")
+
+
+@override_settings(
+    CACHES={
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "detect-form-fields-tests",
+        }
+    }
+)
+class DetectFormFieldsTests(TestCase):
+    """Security and behavior tests for the admin-only Google Form helper."""
+
+    endpoint = reverse("detect_form_fields")
+    form_url = "https://docs.google.com/forms/d/e/test-form_123/viewform"
+    form_html = """
+        <script>
+        var FB_PUBLIC_LOAD_DATA_ = [null,[null,[[null,"Name",null,0,[[123,null,1]]],[null,"Message",null,1,[[456,null,0]]]]]];
+        </script>
+    """
+
+    def setUp(self):
+        cache.clear()
+        user_model = get_user_model()
+        self.staff_user = user_model.objects.create_user(
+            username="form-admin",
+            password="safe-password",
+            is_staff=True,
+        )
+        self.regular_user = user_model.objects.create_user(
+            username="form-reader",
+            password="safe-password",
+        )
+
+    def _staff_post(self, url=None, **extra):
+        self.client.force_login(self.staff_user)
+        return self.client.post(self.endpoint, {"url": url or self.form_url}, **extra)
+
+    def test_endpoint_is_staff_only(self):
+        response = self.client.post(self.endpoint, {"url": self.form_url})
+        self.assertEqual(response.status_code, 302)
+
+        self.client.force_login(self.regular_user)
+        response = self.client.post(self.endpoint, {"url": self.form_url})
+        self.assertEqual(response.status_code, 302)
+
+    def test_endpoint_requires_post_for_staff(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.endpoint)
+        self.assertEqual(response.status_code, 405)
+
+    def test_endpoint_enforces_csrf_for_staff_posts(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.staff_user)
+
+        response = csrf_client.post(self.endpoint, {"url": self.form_url})
+        self.assertEqual(response.status_code, 403)
+
+    @patch("home.views._fetch_google_form_html")
+    def test_staff_can_detect_fields_with_csrf(self, fetch_form):
+        fetch_form.return_value = (self.form_html, self.form_url)
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.staff_user)
+        csrf_token = "a" * 32
+        csrf_client.cookies["csrftoken"] = csrf_token
+
+        response = csrf_client.post(
+            self.endpoint,
+            {"url": self.form_url},
+            HTTP_X_CSRFTOKEN=csrf_token,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            fetch_form.call_args.args[0],
+            "https://docs.google.com/forms/d/e/test-form_123/viewform",
+        )
+        self.assertEqual(
+            response.json()["action"],
+            "https://docs.google.com/forms/d/e/test-form_123/formResponse",
+        )
+        self.assertEqual(
+            response.json()["fields"],
+            [
+                {
+                    "title": "Name",
+                    "entry": "entry.123",
+                    "type": "text",
+                    "required": True,
+                },
+                {
+                    "title": "Message",
+                    "entry": "entry.456",
+                    "type": "textarea",
+                    "required": False,
+                },
+            ],
+        )
+
+    @patch("home.views._fetch_google_form_html")
+    def test_rejects_non_google_or_non_https_urls_before_fetching(self, fetch_form):
+        for url in (
+            "https://docs.google.com.evil.example/forms/d/e/test-form_123/viewform",
+            "https://evil.example/forms/d/e/test-form_123/viewform",
+            "http://docs.google.com/forms/d/e/test-form_123/viewform",
+        ):
+            response = self._staff_post(url)
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(
+                response.json()["error"], "Enter a valid HTTPS Google Forms URL."
+            )
+        fetch_form.assert_not_called()
+
+    def test_redirect_handler_rejects_non_google_redirect_targets(self):
+        handler = views._GoogleFormsRedirectHandler()
+        request = urllib.request.Request("https://forms.gle/short-link")
+
+        with self.assertRaises(views._UnsafeGoogleFormURL):
+            handler.redirect_request(
+                request,
+                None,
+                302,
+                "Found",
+                {},
+                "http://127.0.0.1/internal-only",
+            )
+
+    def test_response_size_is_bounded_before_reading(self):
+        test_case = self
+
+        class OversizedResponse:
+            headers = {"Content-Length": str(views._FORM_DETECT_MAX_RESPONSE_BYTES + 1)}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def geturl(self):
+                return DetectFormFieldsTests.form_url
+
+            def read(self, _size):
+                test_case.fail("The body must not be read when Content-Length is too large")
+
+        class FakeOpener:
+            def open(self, _request, timeout):
+                test_case.assertEqual(timeout, views._FORM_DETECT_TIMEOUT_SECONDS)
+                return OversizedResponse()
+
+        with patch("home.views.urllib.request.build_opener", return_value=FakeOpener()):
+            with self.assertRaises(views._GoogleFormResponseTooLarge):
+                views._fetch_google_form_html(self.form_url)
+
+    @patch("home.views._fetch_google_form_html")
+    def test_rate_limits_repeated_staff_requests(self, fetch_form):
+        fetch_form.return_value = (self.form_html, self.form_url)
+        for index in range(views._FORM_DETECT_RATE_LIMIT_REQUESTS):
+            response = self._staff_post(
+                f"https://docs.google.com/forms/d/e/test-{index}/viewform"
+            )
+            self.assertEqual(response.status_code, 200)
+
+        response = self._staff_post(
+            "https://docs.google.com/forms/d/e/test-over-limit/viewform"
+        )
+        self.assertEqual(response.status_code, 429)
+        self.assertIn("Too many detection requests", response.json()["error"])
+
+    @patch("home.views._fetch_google_form_html")
+    def test_upstream_errors_do_not_expose_transport_details(self, fetch_form):
+        fetch_form.side_effect = views._GoogleFormFetchError(
+            "dial tcp 127.0.0.1:9999: connection refused"
+        )
+
+        response = self._staff_post()
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn("127.0.0.1", response.json()["error"])
+
+
+# ── Content toolkit ─────────────────────────────────────────────────────────
+
+
+from pathlib import Path
+
+from home.content_tools import (
+    ALLOWED_TAGS,
+    FORBIDDEN_TAGS,
+    Snippet,
+    check_all,
+    check_css_coverage,
+    check_preview_coverage,
+    check_snippet,
+    load_all,
+    load_snippet,
+    parse_html,
+    parse_meta,
+    walk,
+)
+
+
+class ContentToolsParseMetaTest(TestCase):
+    """Tests for the tk:meta header parser."""
+
+    def test_basic_parse(self):
+        source = """<!-- tk:meta
+name: Test block
+tool: test
+group: Testing
+description: A test snippet.
+-->
+<div data-tk="test" class="tk-block tk-test"><p>Hello</p></div>"""
+        meta, html = parse_meta(source)
+        self.assertEqual(meta["name"], "Test block")
+        self.assertEqual(meta["tool"], "test")
+        self.assertEqual(meta["group"], "Testing")
+        self.assertEqual(meta["description"], "A test snippet.")
+        self.assertIn("data-tk", html)
+
+    def test_params_parsed(self):
+        source = """<!-- tk:meta
+name: X
+tool: x
+group: G
+description: D
+param: data-variant :: a | b :: a :: Chooses style.
+param: data-size :: small | large :: small :: Controls size.
+-->
+<div data-tk="x" class="tk-block tk-x"><p>ok</p></div>"""
+        meta, _ = parse_meta(source)
+        self.assertEqual(len(meta["params"]), 2)
+        self.assertEqual(meta["params"][0].name, "data-variant")
+        self.assertEqual(meta["params"][1].description, "Controls size.")
+
+    def test_no_header(self):
+        meta, html = parse_meta("<div><p>no header</p></div>")
+        self.assertEqual(meta, {})
+        self.assertEqual(html, "<div><p>no header</p></div>")
+
+
+class ContentToolsValidationTest(TestCase):
+    """Tests for snippet validation rules."""
+
+    def _snippet(self, html, **kwargs):
+        defaults = {
+            "path": Path("test.html"),
+            "tool": "test",
+            "name": "Test",
+            "group": "Testing",
+            "description": "A test.",
+            "html": html,
+        }
+        defaults.update(kwargs)
+        return Snippet(**defaults)
+
+    def test_valid_snippet(self):
+        html = '<div data-tk="test" class="tk-block tk-test"><p>Hello</p></div>'
+        problems = check_snippet(self._snippet(html))
+        self.assertEqual(problems, [])
+
+    def test_forbidden_tag_detected(self):
+        html = '<div data-tk="test" class="tk-block tk-test"><script>alert(1)</script></div>'
+        problems = check_snippet(self._snippet(html))
+        self.assertTrue(any("script" in p for p in problems))
+
+    def test_on_handler_detected(self):
+        html = '<div data-tk="test" class="tk-block tk-test"><p onclick="x()">Hi</p></div>'
+        problems = check_snippet(self._snippet(html))
+        self.assertTrue(any("onclick" in p for p in problems))
+
+    def test_empty_element_detected(self):
+        html = '<div data-tk="test" class="tk-block tk-test"><span class="tk-x"></span></div>'
+        problems = check_snippet(self._snippet(html))
+        self.assertTrue(any("empty" in p.lower() for p in problems))
+
+    def test_missing_marker_detected(self):
+        html = '<div class="tk-block tk-test"><p>No marker</p></div>'
+        problems = check_snippet(self._snippet(html))
+        self.assertTrue(any("data-tk" in p for p in problems))
+
+    def test_style_attribute_rejected(self):
+        html = '<div data-tk="test" class="tk-block tk-test"><p style="color:red">Styled</p></div>'
+        problems = check_snippet(self._snippet(html))
+        self.assertTrue(any("style" in p for p in problems))
+
+    def test_non_tk_class_rejected(self):
+        html = '<div data-tk="test" class="tk-block tk-test"><p class="text-red-500">Tailwind</p></div>'
+        problems = check_snippet(self._snippet(html))
+        self.assertTrue(any("text-red-500" in p for p in problems))
+
+    def test_missing_metadata_detected(self):
+        html = '<div data-tk="test" class="tk-block tk-test"><p>Hi</p></div>'
+        s = self._snippet(html, name="", description="")
+        problems = check_snippet(s)
+        self.assertTrue(any("name" in p for p in problems))
+
+    def test_tool_filename_mismatch(self):
+        html = '<div data-tk="test" class="tk-block tk-test"><p>Hi</p></div>'
+        s = self._snippet(html, path=Path("wrong.html"))
+        problems = check_snippet(s)
+        self.assertTrue(any("filename" in p for p in problems))
+
+
+class ContentToolsSnippetFilesTest(TestCase):
+    """Tests that run against the real snippet files on disk."""
+
+    def test_all_snippets_pass_validation(self):
+        """Every snippet in tools/snippets/ must pass check_snippet()."""
+        failures = check_all()
+        if failures:
+            details = "\n".join(
+                f"  {name}: {', '.join(problems)}"
+                for name, problems in failures.items()
+            )
+            self.fail(f"Snippet validation failed:\n{details}")
+
+    def test_all_snippets_have_css(self):
+        """Every tk- class used in a snippet must have a CSS rule."""
+        problems = check_css_coverage()
+        if problems:
+            self.fail(
+                "CSS coverage gaps:\n  " + "\n  ".join(problems)
+            )
+
+    def test_all_snippets_in_preview(self):
+        """Every tool must appear in the preview gallery."""
+        problems = check_preview_coverage()
+        if problems:
+            self.fail(
+                "Preview coverage gaps:\n  " + "\n  ".join(problems)
+            )
+
+    def test_load_all_returns_snippets(self):
+        """Sanity check that snippets are found and loaded."""
+        snippets = load_all()
+        # Per-snippet validation, CSS coverage and preview coverage above are
+        # the actual catalog contract.  Do not duplicate a hand-maintained
+        # count here: it becomes stale whenever a block is intentionally
+        # added or retired.
+        self.assertTrue(snippets)
+        tools = {s.tool for s in snippets}
+        self.assertIn("callout", tools)
+        self.assertIn("quiz", tools)
+        self.assertIn("gform", tools)
+
+
+class ContentToolsBuildCatalogTest(TestCase):
+    """Tests for the build_tools_catalog management command."""
+
+    def test_build_catalog_command(self):
+        """manage.py build_tools_catalog should succeed and write the file."""
+        out = StringIO()
+        call_command("build_tools_catalog", stdout=out)
+        output = out.getvalue()
+        self.assertIn("snippet", output.lower())
+
+        catalog_path = Path(__file__).resolve().parent.parent / "static/js/generated/tools-catalog.js"
+        self.assertTrue(catalog_path.is_file())
+        content = catalog_path.read_text(encoding="utf-8")
+        self.assertIn("__TK_CATALOG__", content)
+        self.assertIn('"callout"', content)
+
+    def test_check_mode_passes(self):
+        """manage.py build_tools_catalog --check should succeed."""
+        out = StringIO()
+        call_command("build_tools_catalog", check=True, stdout=out)
+        self.assertIn("passed", out.getvalue().lower())

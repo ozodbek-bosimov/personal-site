@@ -1,0 +1,2583 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   CKEditor Content Toolkit — stylesheet
+   ═══════════════════════════════════════════════════════════════════════
+
+   One stylesheet, three consumers:
+
+     1. The public site   — loaded by blogpost.html / about.html only when
+                            the stored HTML actually contains a `data-tk`
+                            marker, so ordinary posts pay nothing.
+     2. The admin editor  — pulled in by css/ckeditor_admin_fix.css
+                            (CKEDITOR_5_CUSTOM_CSS) so blocks look right
+                            while being written.
+     3. tools/preview/    — a standalone gallery opened straight off disk.
+
+   Because of (2) and (3) the toolkit can never assume base.css is present.
+   Every token therefore reads `var(--site-token, <literal>)`: it inherits
+   the site palette when base.css is loaded and falls back to an identical
+   literal when it is not.
+
+   Rules that apply to this whole file:
+     • Class prefix is `tk-`. No exceptions.
+     • No Tailwind utility classes anywhere — Tailwind's content globs only
+       scan templates/, never DB content, so a utility used here would be
+       purged from the build and silently render as nothing.
+     • Selectors must survive `.blog-content` inheriting into them. base.css
+       styles bare p/ul/ol/li/a inside .blog-content, so any toolkit list or
+       link resets what it needs to explicitly.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Tokens ─────────────────────────────────────────────────────────────
+   Dark surface is the default because that is what the live site uses.
+   Light overrides for the editing surface live at the bottom of this
+   block, scoped to CKEditor's editable root.                          */
+
+:root {
+    /* Surfaces */
+    --tk-surface: var(--surface-card, rgba(255, 255, 255, 0.02));
+    --tk-surface-2: var(--surface-card-hover, rgba(255, 255, 255, 0.04));
+    --tk-surface-3: rgba(255, 255, 255, 0.06);
+    --tk-surface-solid: #1e293b;
+    --tk-surface-sunken: rgba(2, 6, 23, 0.45);
+
+    /* Hairlines */
+    --tk-border: var(--surface-border, rgba(255, 255, 255, 0.08));
+    --tk-border-strong: var(--surface-border-hover, rgba(148, 163, 184, 0.32));
+
+    /* Text ramp */
+    --tk-fg-strong: var(--text-strong, #f1f5f9);
+    --tk-fg: var(--text, #e2e8f0);
+    --tk-fg-soft: var(--text-soft, #cbd5e1);
+    --tk-fg-muted: var(--text-muted, #94a3b8);
+    --tk-fg-faint: var(--text-faint, #64748b);
+
+    /* Accent (brand cyan) */
+    --tk-accent-100: var(--accent-100, #cffafe);
+    --tk-accent-200: var(--accent-200, #a5f3fc);
+    --tk-accent: var(--accent-300, #67e8f9);
+    --tk-accent-400: var(--accent-400, #22d3ee);
+    --tk-accent-500: var(--accent-500, #06b6d4);
+    --tk-accent-700: var(--accent-700, #0e7490);
+    --tk-accent-contrast: #042f36;
+    --tk-accent-soft: var(--accent-halo, rgba(34, 211, 238, 0.15));
+
+    /* Gradient pair used by the gradient button / CTA banner */
+    --tk-grad-from: var(--accent-400, #22d3ee);
+    --tk-grad-to: #3b82f6;
+
+    /* Semantic ramp — one hue per state, plus a 12%-alpha wash and a
+       readable foreground for text sitting on that wash. */
+    --tk-info: #38bdf8;
+    --tk-info-wash: rgba(56, 189, 248, 0.12);
+    --tk-tip: #34d399;
+    --tk-tip-wash: rgba(52, 211, 153, 0.12);
+    --tk-warning: #fbbf24;
+    --tk-warning-wash: rgba(251, 191, 36, 0.12);
+    --tk-danger: var(--danger, #f87171);
+    --tk-danger-wash: rgba(248, 113, 113, 0.12);
+    --tk-success: var(--ok, #4ade80);
+    --tk-success-wash: rgba(74, 222, 128, 0.12);
+
+    /* Geometry */
+    --tk-radius: 0.875rem;
+    --tk-radius-sm: 0.5rem;
+    --tk-radius-lg: 1.125rem;
+    --tk-radius-pill: 999px;
+    --tk-pad: 1rem;
+    --tk-pad-lg: 1.25rem;
+    --tk-gap: 0.75rem;
+    --tk-block-gap: 1.75rem;
+
+    /* Type */
+    --tk-fs-xs: 0.75rem;
+    --tk-fs-sm: 0.85rem;
+    --tk-fs-md: 0.95rem;
+    --tk-fs-lg: 1.05rem;
+    --tk-mono:
+        ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", monospace;
+
+    /* Depth + motion */
+    --tk-shadow: var(--surface-shadow, 0 12px 28px rgba(0, 0, 0, 0.24));
+    --tk-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
+    --tk-ring: var(--accent-ring, rgba(34, 211, 238, 0.45));
+    --tk-dur: 180ms;
+    --tk-ease: var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+    --tk-ease-out: var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+/* Light surface for the CKEditor editing area. The editable root is the
+   only reliable hook: `.ck-content` is on the public wrapper too, so
+   scoping to that would repaint the live site. */
+.ck.ck-editor__editable,
+.ck.ck-editor__editable_inline,
+.tk-surface-light {
+    --tk-surface: rgba(15, 23, 42, 0.03);
+    --tk-surface-2: rgba(15, 23, 42, 0.05);
+    --tk-surface-3: rgba(15, 23, 42, 0.07);
+    --tk-surface-solid: #f1f5f9;
+    --tk-surface-sunken: rgba(15, 23, 42, 0.06);
+    --tk-border: rgba(15, 23, 42, 0.12);
+    --tk-border-strong: rgba(15, 23, 42, 0.24);
+    --tk-fg-strong: #0f172a;
+    --tk-fg: #1e293b;
+    --tk-fg-soft: #334155;
+    --tk-fg-muted: #52637a;
+    --tk-fg-faint: #64748b;
+    --tk-accent: #0e7490;
+    --tk-accent-200: #0891b2;
+    --tk-accent-contrast: #ffffff;
+    --tk-info: #0369a1;
+    --tk-info-wash: rgba(3, 105, 161, 0.09);
+    --tk-tip: #047857;
+    --tk-tip-wash: rgba(4, 120, 87, 0.09);
+    --tk-warning: #b45309;
+    --tk-warning-wash: rgba(180, 83, 9, 0.09);
+    --tk-danger: #b91c1c;
+    --tk-danger-wash: rgba(185, 28, 28, 0.09);
+    --tk-success: #15803d;
+    --tk-success-wash: rgba(21, 128, 61, 0.09);
+    --tk-shadow: 0 6px 18px rgba(15, 23, 42, 0.1);
+    --tk-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+/* ── Shared primitives ──────────────────────────────────────────────── */
+
+/* Every block-level toolkit root. `clear: both` matters because base.css
+   lets editor-aligned images float, and a floated image immediately above
+   a toolkit block would otherwise wrap around it. */
+[data-tk] {
+    clear: both;
+    box-sizing: border-box;
+}
+
+[data-tk] *,
+[data-tk] *::before,
+[data-tk] *::after {
+    box-sizing: border-box;
+}
+
+.tk-block {
+    margin: var(--tk-block-gap) 0;
+    color: var(--tk-fg);
+    font-size: var(--tk-fs-md);
+    line-height: 1.6;
+}
+
+/* base.css gives .blog-content p a 1rem bottom margin and 1.05rem size.
+   Inside toolkit blocks the container owns the spacing, so paragraphs are
+   flattened and the last one loses its trailing margin. */
+.tk-block p {
+    margin: 0 0 0.6em;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+}
+
+.tk-block p:last-child {
+    margin-bottom: 0;
+}
+
+.tk-block h2,
+.tk-block h3,
+.tk-block h4 {
+    margin: 0 0 0.5rem;
+    padding: 0;
+    border: 0;
+    color: var(--tk-fg-strong);
+    font-size: var(--tk-fs-lg);
+    font-weight: 650;
+    line-height: 1.35;
+    letter-spacing: 0;
+}
+
+/* Lists that the toolkit owns: no marker, no inherited indent. Snippets
+   that want visible bullets opt back in per component. */
+.tk-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: inherit;
+    color: inherit;
+}
+
+.tk-list > li {
+    margin: 0;
+    padding: 0;
+}
+
+/* Anchor reset for toolkit chrome.
+
+   base.css styles `.blog-content a` — specificity (0,1,1) — with a colour
+   and a background-image "underline grow" animation. A bare `.tk-btn`
+   (0,1,0) loses to it, and the animation would draw a sliding bar across
+   a button. Every anchor rule in this file therefore carries the
+   `.tk-block a.tk-…` shape (0,2,1) so it wins regardless of the order the
+   two stylesheets happen to load in. */
+.tk-block a.tk-btn,
+.tk-block a.tk-linkcard__link,
+.tk-block a.tk-filecard__link {
+    background-image: none;
+    background-size: auto;
+    text-decoration: none;
+    word-break: normal;
+    overflow-wrap: break-word;
+}
+
+/* Screen-reader-only text. Used by JS-drawn controls that need an
+   accessible name the sighted layout does not have room for. */
+.tk-sr {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+}
+
+/* Base for every control the runtime injects. Snippets never ship a
+   <button>, so this class only ever lands on JS-created nodes. */
+.tk-ctl {
+    -webkit-appearance: none;
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        background-color var(--tk-dur) var(--tk-ease),
+        border-color var(--tk-dur) var(--tk-ease),
+        color var(--tk-dur) var(--tk-ease),
+        opacity var(--tk-dur) var(--tk-ease);
+}
+
+.tk-ctl:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+/* One focus treatment for the whole toolkit. */
+[data-tk] :focus-visible {
+    outline: 2px solid var(--tk-accent-400);
+    outline-offset: 2px;
+    border-radius: var(--tk-radius-sm);
+}
+
+/* Decorative glyphs drawn by CSS `content` must never reach the
+   accessibility tree or a text selection. */
+.tk-ico {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-tk] *,
+    [data-tk] *::before,
+    [data-tk] *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+/* ── callout ────────────────────────────────────────────────────────────
+   data-tk="callout"  ·  data-variant=info|tip|warning|danger|success
+
+   Sleek, minimal, professional design matching site architecture.       */
+
+.tk-callout {
+    --tk-co-hue: #38bdf8;
+    --tk-co-bg: rgba(56, 189, 248, 0.04);
+    --tk-co-border: rgba(56, 189, 248, 0.2);
+    display: block;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-left: 4px solid var(--tk-co-hue);
+    border-radius: 0 0.625rem 0.625rem 0;
+    background: var(--tk-co-bg);
+}
+
+.tk-callout[data-variant="tip"] {
+    --tk-co-hue: #34d399;
+    --tk-co-bg: rgba(52, 211, 153, 0.04);
+    --tk-co-border: rgba(52, 211, 153, 0.2);
+}
+
+.tk-callout[data-variant="warning"] {
+    --tk-co-hue: #fbbf24;
+    --tk-co-bg: rgba(251, 191, 36, 0.04);
+    --tk-co-border: rgba(251, 191, 36, 0.2);
+}
+
+.tk-callout[data-variant="danger"] {
+    --tk-co-hue: #f87171;
+    --tk-co-bg: rgba(248, 113, 113, 0.04);
+    --tk-co-border: rgba(248, 113, 113, 0.2);
+}
+
+.tk-callout[data-variant="success"] {
+    --tk-co-hue: #4ade80;
+    --tk-co-bg: rgba(74, 222, 128, 0.04);
+    --tk-co-border: rgba(74, 222, 128, 0.2);
+}
+
+.tk-callout::before {
+    display: none;
+}
+
+.tk-callout__body {
+    width: 100%;
+}
+
+.tk-callout__title {
+    margin: 0 0 0.35rem;
+    color: var(--tk-co-hue);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.tk-callout__body > p {
+    color: var(--tk-fg-soft, #cbd5e1);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    margin: 0 0 0.5rem;
+}
+
+.tk-callout__body > p:last-child {
+    margin-bottom: 0;
+}
+
+/* ── button / CTA ───────────────────────────────────────────────────────
+   data-tk="button"  ·  variants: primary, ghost, gradient, icon
+
+   Snippets ship <a> elements, never <button> — GHS deletes buttons. The
+   `.tk-btn` selector is duplicated with a `.tk-block a.tk-btn` twin so the
+   same styling applies to both authored anchors and the buttons the
+   runtime injects elsewhere in this file.                               */
+
+.tk-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.tk-btn,
+.tk-block a.tk-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.58rem 1.1rem;
+    border: 1px solid transparent;
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-surface-2);
+    color: var(--tk-fg-strong);
+    font-size: var(--tk-fs-sm);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    text-align: center;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition:
+        background var(--tk-dur) var(--tk-ease),
+        border-color var(--tk-dur) var(--tk-ease),
+        color var(--tk-dur) var(--tk-ease),
+        box-shadow var(--tk-dur) var(--tk-ease);
+}
+
+/* primary — solid accent */
+.tk-btn--primary,
+.tk-block a.tk-btn--primary {
+    background: linear-gradient(180deg, rgba(6, 182, 212, 0.12) 0%, rgba(6, 182, 212, 0.03) 100%);
+    border-color: rgba(6, 182, 212, 0.2);
+    color: var(--accent-100, #cffafe);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(6, 182, 212, 0.15);
+}
+
+.tk-btn--primary:hover,
+.tk-block a.tk-btn--primary:hover {
+    background: linear-gradient(180deg, rgba(6, 182, 212, 0.18) 0%, rgba(6, 182, 212, 0.06) 100%);
+    border-color: rgba(6, 182, 212, 0.35);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(6, 182, 212, 0.25);
+}
+
+/* ghost — outline only */
+.tk-btn--ghost,
+.tk-block a.tk-btn--ghost {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--tk-fg-strong);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.tk-btn--ghost:hover,
+.tk-block a.tk-btn--ghost:hover {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* gradient — cyan → blue sweep */
+.tk-btn--gradient,
+.tk-block a.tk-btn--gradient {
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--accent-100, #cffafe);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.tk-btn--gradient:hover,
+.tk-block a.tk-btn--gradient:hover {
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.25) 0%, rgba(59, 130, 246, 0.25) 100%);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* icon — a leading glyph chosen by data-tk-icon.
+   The glyph is a pseudo-element so the snippet stays free of empty spans
+   and the symbol never lands in copied text or the a11y tree. */
+.tk-btn--icon::before,
+.tk-block a.tk-btn--icon::before {
+    content: var(--tk-btn-glyph, "\2192"); /* → */
+    font-family: var(--tk-mono);
+    font-size: 1em;
+    line-height: 1;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tk-btn[data-tk-icon="arrow"] {
+    --tk-btn-glyph: "\2192"; /* → */
+}
+.tk-btn[data-tk-icon="download"] {
+    --tk-btn-glyph: "\2913"; /* ⤓ */
+}
+.tk-btn[data-tk-icon="external"] {
+    --tk-btn-glyph: "\2197"; /* ↗ */
+}
+.tk-btn[data-tk-icon="play"] {
+    --tk-btn-glyph: "\25B6"; /* ▶ */
+}
+.tk-btn[data-tk-icon="mail"] {
+    --tk-btn-glyph: "\2709"; /* ✉ */
+}
+.tk-btn[data-tk-icon="check"] {
+    --tk-btn-glyph: "\2713"; /* ✓ */
+}
+.tk-btn[data-tk-icon="star"] {
+    --tk-btn-glyph: "\2605"; /* ★ */
+}
+.tk-btn[data-tk-icon="code"] {
+    --tk-btn-glyph: "\2039\203A"; /* ‹› */
+}
+
+/* Full-width on very narrow screens: a row of pill buttons at 320px
+   otherwise wraps into a ragged stack. */
+@media (max-width: 30rem) {
+    .tk-btn-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tk-btn-row .tk-btn,
+    .tk-btn-row a.tk-btn {
+        width: 100%;
+    }
+}
+
+/* ── link-card ──────────────────────────────────────────────────────────
+   data-tk="link-card"
+
+   The whole card is clickable, but the <a> only ever wraps text. CKEditor
+   models a link as a *text attribute*, so an anchor wrapped around block
+   content comes back inverted or split. The stretched-link trick gets the
+   same behaviour with markup the editor can actually represent.         */
+
+.tk-linkcard {
+    position: relative;
+    padding: var(--tk-pad) var(--tk-pad-lg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.125rem;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition:
+        border-color var(--tk-dur) var(--tk-ease),
+        background var(--tk-dur) var(--tk-ease),
+        box-shadow var(--tk-dur) var(--tk-ease),
+        transform var(--tk-dur) var(--tk-ease);
+}
+
+.tk-linkcard:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.tk-linkcard__title {
+    display: block;
+    margin: 0 0 0.3rem;
+    font-size: var(--tk-fs-lg);
+    font-weight: 650;
+    line-height: 1.35;
+    color: #f1f5f9;
+}
+
+.tk-block a.tk-linkcard__link {
+    color: #f1f5f9;
+}
+
+.tk-linkcard:hover .tk-linkcard__link,
+.tk-block a.tk-linkcard__link:hover {
+    color: #22d3ee;
+}
+
+/* The hit area. Sits above the card's own background but below nothing
+   else, so any second link inside the card would be unreachable — which is
+   why the snippet documents "one link per card". */
+.tk-block a.tk-linkcard__link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+
+.tk-linkcard__desc {
+    display: block;
+    margin: 0 0 0.65rem; /* added extra space between desc and host */
+    color: #94a3b8;
+    font-size: var(--tk-fs-sm);
+}
+
+.tk-linkcard__host {
+    display: block;
+    margin: 0;
+    color: #64748b;
+    font-family: var(--tk-mono);
+    font-size: var(--tk-fs-xs);
+    letter-spacing: 0.02em;
+}
+
+.tk-linkcard__host::before {
+    content: "";
+    display: inline-block;
+    width: 1.15em;
+    height: 1.15em;
+    background-color: currentColor;
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z'/%3E%3Cpath fill-rule='evenodd' d='M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z'/%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z'/%3E%3Cpath fill-rule='evenodd' d='M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z'/%3E%3C/svg%3E");
+    mask-size: cover;
+    -webkit-mask-size: cover;
+    margin-right: 0.3em;
+    vertical-align: text-bottom;
+}
+
+/* ── file-card ──────────────────────────────────────────────────────────
+   data-tk="file-card"  ·  data-ext="pdf|zip|…"
+
+   The extension badge is `content: attr(data-ext)`, so the badge really is
+   driven by the attribute rather than duplicated as text.               */
+
+.tk-filecard {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.85rem var(--tk-pad);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.125rem;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition:
+        border-color var(--tk-dur) var(--tk-ease),
+        background var(--tk-dur) var(--tk-ease),
+        box-shadow var(--tk-dur) var(--tk-ease),
+        transform var(--tk-dur) var(--tk-ease);
+}
+
+.tk-filecard:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.tk-filecard::before {
+    content: attr(data-ext);
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    color: #22d3ee;
+    font-family: var(--tk-mono);
+    font-size: var(--tk-fs-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tk-filecard__body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tk-filecard__name {
+    margin: 0 0 0.15rem;
+    font-size: var(--tk-fs-md);
+    font-weight: 600;
+    line-height: 1.35;
+    color: #f1f5f9;
+}
+
+.tk-block a.tk-filecard__link {
+    color: #f1f5f9;
+}
+
+
+
+.tk-block a.tk-filecard__link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+
+.tk-filecard__meta {
+    margin: 0;
+    color: #94a3b8;
+    font-size: var(--tk-fs-xs);
+}
+
+/* Download affordance on the right edge. */
+.tk-filecard::after {
+    content: "";
+    flex: 0 0 auto;
+    width: 1.15em;
+    height: 1.15em;
+    background-color: currentColor;
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z'/%3E%3Cpath d='M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z'/%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z'/%3E%3Cpath d='M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z'/%3E%3C/svg%3E");
+    mask-size: cover;
+    -webkit-mask-size: cover;
+    color: #64748b;
+    transition: color var(--tk-dur) var(--tk-ease);
+}
+
+
+
+/* ── cta-banner ─────────────────────────────────────────────────────────
+   data-tk="cta-banner"  ·  data-variant=solid|gradient|outline            */
+
+.tk-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tk-pad);
+    padding: var(--tk-pad-lg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.125rem;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.tk-cta[data-variant="gradient"] {
+    background: linear-gradient(108deg, rgba(6, 182, 212, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+    border-color: rgba(6, 182, 212, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(6, 182, 212, 0.15);
+}
+
+.tk-cta[data-variant="outline"] {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-style: dashed;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.tk-cta__body {
+    flex: 1 1 18rem;
+    min-width: 0;
+}
+
+.tk-cta__title {
+    margin: 0 0 0.25rem;
+    color: #f1f5f9;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.tk-cta__text {
+    margin: 0;
+    color: #94a3b8;
+    font-size: var(--tk-fs-sm);
+}
+
+.tk-cta__actions {
+    flex: 0 0 auto;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+@media (max-width: 34rem) {
+    .tk-cta {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tk-cta__body {
+        flex: 1 1 auto;
+    }
+
+    .tk-cta__actions {
+        width: 100%;
+    }
+
+    .tk-cta__actions .tk-btn,
+    .tk-cta__actions a.tk-btn {
+        width: 100%;
+    }
+}
+
+/* ── key-takeaways ──────────────────────────────────────────────────────
+   data-tk="key-takeaways"                                                */
+
+.tk-takeaways {
+    padding: var(--tk-pad) var(--tk-pad-lg);
+    border: 1px solid var(--tk-border);
+    border-radius: var(--tk-radius);
+    background: linear-gradient(
+        180deg,
+        var(--tk-accent-soft) 0%,
+        transparent 60%
+    );
+    background-color: var(--tk-surface);
+}
+
+.tk-takeaways__title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0 0 0.7rem;
+    color: var(--tk-accent);
+    font-size: var(--tk-fs-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.tk-takeaways__title::before {
+    content: "\1F4CC"; /* 📌 */
+    font-size: 0.9em;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tk-takeaways__list > li {
+    position: relative;
+    margin-bottom: 0.5rem;
+    padding-left: 1.6rem;
+    color: var(--tk-fg-soft);
+    line-height: 1.55;
+}
+
+.tk-takeaways__list > li:last-child {
+    margin-bottom: 0;
+}
+
+.tk-takeaways__list > li::before {
+    content: "\2713"; /* ✓ */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1.1rem;
+    color: var(--tk-accent-400);
+    font-weight: 700;
+    text-align: center;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* ── steps ──────────────────────────────────────────────────────────────
+   data-tk="steps"  ·  data-start="1"
+
+   Numbers come from a CSS counter, not from typed-in digits, so inserting
+   a step in the middle renumbers the rest for free. `data-start` shifts the
+   counter for a procedure continued from an earlier block.              */
+
+/* counter-reset takes a plain <integer> — no calc(), no var() — so the
+   offset is spelled out per supported start value rather than computed. */
+.tk-steps {
+    counter-reset: tk-step 0;
+}
+
+.tk-steps[data-start="2"] {
+    counter-reset: tk-step 1;
+}
+.tk-steps[data-start="3"] {
+    counter-reset: tk-step 2;
+}
+.tk-steps[data-start="4"] {
+    counter-reset: tk-step 3;
+}
+.tk-steps[data-start="5"] {
+    counter-reset: tk-step 4;
+}
+.tk-steps[data-start="6"] {
+    counter-reset: tk-step 5;
+}
+.tk-steps[data-start="7"] {
+    counter-reset: tk-step 6;
+}
+.tk-steps[data-start="8"] {
+    counter-reset: tk-step 7;
+}
+.tk-steps[data-start="9"] {
+    counter-reset: tk-step 8;
+}
+.tk-steps[data-start="10"] {
+    counter-reset: tk-step 9;
+}
+
+/* The ol itself. `.tk-list` already removes the marker and the inherited
+   indent from base.css; this only strips the trailing margin so the block
+   root owns all outer spacing. */
+.tk-steps__list {
+    margin: 0;
+    padding: 0;
+}
+
+.tk-steps__item {
+    counter-increment: tk-step;
+    position: relative;
+    padding: 0 0 1.15rem 2.9rem;
+}
+
+/* The numbered disc. */
+.tk-steps__item::before {
+    content: counter(tk-step);
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.85rem;
+    height: 1.85rem;
+    border: 1px solid var(--tk-accent-400);
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-surface-solid);
+    color: var(--tk-accent);
+    font-family: var(--tk-mono);
+    font-size: var(--tk-fs-sm);
+    font-weight: 700;
+    line-height: 1;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* The connector rail, drawn from below one disc to the next. */
+.tk-steps__item::after {
+    content: "";
+    position: absolute;
+    top: 2.05rem;
+    bottom: 0.25rem;
+    left: 0.9rem;
+    width: 1px;
+    background: var(--tk-border-strong);
+}
+
+.tk-steps__item:last-child {
+    padding-bottom: 0;
+}
+
+.tk-steps__item:last-child::after {
+    display: none;
+}
+
+.tk-steps__title {
+    margin: 0.15rem 0 0.35rem;
+    font-size: var(--tk-fs-lg);
+}
+
+.tk-steps__item > p {
+    color: var(--tk-fg-muted);
+    font-size: var(--tk-fs-sm);
+}
+
+/* ── pros-cons ──────────────────────────────────────────────────────────
+   data-tk="pros-cons"  ·  columns keyed by data-kind=pro|con             */
+
+.tk-proscons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--tk-gap);
+}
+
+.tk-proscons__col,
+.tk-proscons__group {
+    --tk-pc-hue: var(--tk-success);
+    --tk-pc-wash: var(--tk-success-wash);
+    --tk-pc-mark: "\2713"; /* ✓ */
+    padding: var(--tk-pad);
+    border: 1px solid var(--tk-border);
+    border-top: 2px solid var(--tk-pc-hue);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-pc-wash);
+}
+
+.tk-proscons__col[data-kind="con"],
+.tk-proscons__group--cons {
+    --tk-pc-hue: var(--tk-danger);
+    --tk-pc-wash: var(--tk-danger-wash);
+    --tk-pc-mark: "\2715"; /* ✕ */
+}
+
+.tk-proscons__title {
+    margin: 0 0 0.6rem;
+    color: var(--tk-pc-hue);
+    font-size: var(--tk-fs-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.tk-proscons__list > li,
+.tk-proscons__item {
+    position: relative;
+    margin-bottom: 0.45rem;
+    padding-left: 1.5rem;
+    color: var(--tk-fg-soft);
+    font-size: var(--tk-fs-sm);
+    line-height: 1.55;
+    list-style: none !important;
+}
+
+.tk-proscons__list > li:last-child,
+.tk-proscons__item:last-child {
+    margin-bottom: 0;
+}
+
+.tk-proscons__list > li::before,
+.tk-proscons__item::before {
+    content: var(--tk-pc-mark);
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: var(--tk-pc-hue);
+    font-weight: 700;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* ── stat cards ─────────────────────────────────────────────────────────
+   data-tk="stats"  ·  data-cols=2|3|4                                     */
+
+.tk-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--tk-gap);
+}
+
+@media (min-width: 40rem) {
+    .tk-stats[data-cols="2"] {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .tk-stats[data-cols="3"] {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .tk-stats[data-cols="4"] {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.tk-stat {
+    padding: var(--tk-pad) 0.85rem;
+    border: 1px solid var(--tk-border);
+    border-radius: var(--tk-radius);
+    background: var(--tk-surface);
+    text-align: center;
+}
+
+.tk-stat__value {
+    margin: 0 0 0.2rem;
+    background-image: linear-gradient(
+        100deg,
+        var(--tk-grad-from) 0%,
+        var(--tk-grad-to) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.tk-stat__label {
+    margin: 0;
+    color: var(--tk-fg-muted);
+    font-size: var(--tk-fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.tk-stat__note {
+    margin: 0.35rem 0 0;
+    color: var(--tk-fg-faint);
+    font-size: var(--tk-fs-xs);
+}
+
+/* ── quote ──────────────────────────────────────────────────────────────
+   data-tk="quote"
+
+   base.css already styles `.blog-content blockquote` with its own border,
+   background and italics. Everything it sets is unset here so the pull
+   quote does not inherit two competing treatments.                      */
+
+.tk-quote {
+    padding: var(--tk-pad-lg);
+    border: 1px solid var(--tk-border);
+    border-radius: var(--tk-radius);
+    background: var(--tk-surface);
+}
+
+.tk-block blockquote.tk-quote__body {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    color: var(--tk-fg-strong);
+    font-style: normal;
+}
+
+.tk-quote__body > p {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+    line-height: 1.55;
+}
+
+.tk-quote__body > p:first-child::before {
+    content: "\201C"; /* “ */
+    margin-right: 0.1em;
+    color: var(--tk-accent-400);
+    font-size: 1.6em;
+    font-weight: 700;
+    line-height: 0;
+    vertical-align: -0.25em;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tk-quote__cite {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.5rem;
+    margin: 0.75rem 0 0;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--tk-border);
+    font-size: var(--tk-fs-sm);
+}
+
+.tk-quote__cite > strong {
+    color: var(--tk-fg-strong);
+    font-weight: 650;
+}
+
+.tk-quote__role {
+    color: var(--tk-fg-muted);
+}
+
+/* ── divider ────────────────────────────────────────────────────────────
+   data-tk="divider"  ·  data-variant=line|dots|gradient|label
+
+   `hr` is not on the allowed-tag list, and an empty <div> is not a safe
+   thing to hand CKEditor either. So the divider always carries one short
+   mark paragraph: it is the visible content for `dots`/`label`, and is
+   hidden (display:none, therefore also silent to screen readers) for the
+   two rule variants, where a pseudo-element draws the line instead.     */
+
+.tk-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin: 2.25rem 0;
+}
+
+.tk-divider__mark {
+    margin: 0;
+    color: var(--tk-fg-faint);
+    font-size: var(--tk-fs-sm);
+    letter-spacing: 0.5em;
+    text-indent: 0.5em;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tk-divider[data-variant="dots"] {
+    justify-content: center;
+}
+
+.tk-divider[data-variant="label"] .tk-divider__mark {
+    color: var(--tk-fg-muted);
+    font-size: var(--tk-fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-indent: 0;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* A rule on each side of the label. */
+.tk-divider[data-variant="label"]::before,
+.tk-divider[data-variant="label"]::after {
+    content: "";
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--tk-border-strong);
+}
+
+.tk-divider[data-variant="line"] .tk-divider__mark,
+.tk-divider[data-variant="gradient"] .tk-divider__mark {
+    display: none;
+}
+
+.tk-divider[data-variant="line"]::before {
+    content: "";
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--tk-border-strong);
+}
+
+.tk-divider[data-variant="gradient"]::before {
+    content: "";
+    flex: 1 1 auto;
+    height: 2px;
+    border-radius: var(--tk-radius-pill);
+    background-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--tk-grad-from) 35%,
+        var(--tk-grad-to) 65%,
+        transparent 100%
+    );
+}
+
+/* ── responsive table wrapper ───────────────────────────────────────────
+   data-tk="table"
+
+   The inner markup is exactly what CKEditor's table feature emits —
+   figure.table > table > thead/tbody — so the block round-trips. The
+   wrapper only adds horizontal scrolling and a narrow-screen hint.     */
+
+.tk-tablewrap {
+    margin: var(--tk-block-gap) 0;
+}
+
+.tk-tablewrap > figure.table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--tk-border);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-surface);
+}
+
+.tk-tablewrap > figure.table > table {
+    width: 100%;
+    min-width: 32rem; /* forces the scroll rather than crushing columns */
+    border-collapse: collapse;
+    font-size: var(--tk-fs-sm);
+}
+
+.tk-tablewrap th,
+.tk-tablewrap td {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--tk-border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.tk-tablewrap thead th {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    background: var(--tk-surface-solid);
+    color: var(--tk-fg-strong);
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.tk-tablewrap tbody tr:nth-child(even) td {
+    background: var(--tk-surface-2);
+}
+
+.tk-tablewrap__hint {
+    margin: 0.5rem 0 0;
+    color: var(--tk-fg-faint);
+    font-size: var(--tk-fs-xs);
+}
+
+.tk-tablewrap__hint::before {
+    content: "\21C4\00A0"; /* ⇄ + nbsp */
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* CSS alone cannot tell whether the table actually overflows, so the hint
+   is shown only where overflow is likely. */
+@media (min-width: 48rem) {
+    .tk-tablewrap__hint {
+        display: none;
+    }
+}
+
+/* ── inline pieces: badge · kbd · chip ──────────────────────────────────
+   data-tk="inline"
+
+   These live inside prose. The `data-tk` marker on the containing
+   paragraph is what makes the page load this stylesheet at all, so it has
+   to stay there even when the paragraph is otherwise ordinary text.     */
+
+/* The host paragraph. Inline pills are taller than the text around them, so
+   the line-height is opened up to stop consecutive lines from colliding.
+   Everything else is inherited from the surrounding prose on purpose — this
+   is body copy that happens to contain pills, not a component. */
+.tk-inline {
+    line-height: 1.9;
+}
+
+.tk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--tk-badge-hue, var(--tk-border-strong));
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-badge-wash, var(--tk-surface-2));
+    color: var(--tk-badge-hue, var(--tk-fg-soft));
+    font-size: var(--tk-fs-xs);
+    font-weight: 650;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    vertical-align: 0.05em;
+}
+
+.tk-badge[data-variant="info"] {
+    --tk-badge-hue: var(--tk-info);
+    --tk-badge-wash: var(--tk-info-wash);
+}
+.tk-badge[data-variant="success"] {
+    --tk-badge-hue: var(--tk-success);
+    --tk-badge-wash: var(--tk-success-wash);
+}
+.tk-badge[data-variant="warning"] {
+    --tk-badge-hue: var(--tk-warning);
+    --tk-badge-wash: var(--tk-warning-wash);
+}
+.tk-badge[data-variant="danger"] {
+    --tk-badge-hue: var(--tk-danger);
+    --tk-badge-wash: var(--tk-danger-wash);
+}
+.tk-badge[data-variant="accent"] {
+    --tk-badge-hue: var(--tk-accent);
+    --tk-badge-wash: var(--tk-accent-soft);
+}
+
+.tk-kbd {
+    display: inline-flex;
+    align-items: center;
+    min-width: 1.6rem;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--tk-border-strong);
+    border-bottom-width: 2px;
+    border-radius: 0.3rem;
+    background: var(--tk-surface-solid);
+    color: var(--tk-fg-strong);
+    font-family: var(--tk-mono);
+    font-size: 0.8em;
+    font-weight: 600;
+    line-height: 1.5;
+    justify-content: center;
+    white-space: nowrap;
+    vertical-align: 0.05em;
+}
+
+.tk-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.1rem 0.55rem;
+    border: 1px solid var(--tk-border);
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-surface-2);
+    color: var(--tk-fg-muted);
+    font-size: var(--tk-fs-xs);
+    line-height: 1.6;
+    white-space: nowrap;
+    vertical-align: 0.05em;
+}
+
+.tk-chip::before {
+    content: "#";
+    margin-right: 0.1rem;
+    color: var(--tk-fg-faint);
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Disclosure blocks: spoiler · accordion · tabs · terminal
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* The runtime hides panels with the `hidden` attribute. A component rule
+   that sets `display` would out-specify the UA's `[hidden] { display: none }`
+   and leave the panel visible, so it is enforced here once for the whole
+   toolkit. */
+[data-tk] [hidden] {
+    display: none !important;
+}
+
+/* ── spoiler ────────────────────────────────────────────────────────────
+   data-tk="spoiler"  ·  data-open=yes|no
+
+   With JS off the summary paragraph and the body are both plain visible
+   text, which is the point: a hidden answer that can never be revealed
+   would be worse than no spoiler at all.                                */
+
+.tk-spoiler {
+    border: 1px solid var(--tk-border);
+    border-radius: var(--tk-radius-lg);
+    background: var(--tk-surface);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.tk-block .tk-spoiler__summary {
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+/* The button the runtime puts inside the summary paragraph. Before it
+   exists the paragraph is styled as ordinary text — no false affordance. */
+.tk-spoiler__btn {
+    display: flex;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.6rem;
+    padding: 0.7rem var(--tk-pad);
+    color: var(--tk-fg-strong);
+    font-size: var(--tk-fs-md);
+    font-weight: 600;
+}
+
+.tk-spoiler__btn:hover {
+    background: var(--tk-surface-2);
+    color: var(--tk-accent);
+}
+
+/* Disclosure triangle, rotated when open. */
+.tk-spoiler__btn::before {
+    content: "\25B8"; /* ▸ */
+    flex: 0 0 auto;
+    color: var(--tk-accent-400);
+    font-size: 0.9em;
+    line-height: 1;
+    transition: transform var(--tk-dur) var(--tk-ease);
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tk-spoiler__btn[aria-expanded="true"]::before {
+    transform: rotate(90deg);
+}
+
+.tk-spoiler__body {
+    padding: 0.15rem var(--tk-pad) var(--tk-pad);
+    border-top: 1px solid var(--tk-border);
+    color: var(--tk-fg-soft);
+}
+
+/* Before the runtime lands there is no border to double up on. */
+.tk-spoiler:not([data-tk-ready]) .tk-spoiler__body {
+    border-top: 0;
+}
+
+/* ── accordion / FAQ ────────────────────────────────────────────────────
+   data-tk="accordion"  ·  data-single=yes|no  ·  item data-open=yes|no    */
+
+.tk-accordion {
+    border: 1px solid var(--tk-border);
+    border-radius: var(--tk-radius-lg);
+    background: var(--tk-surface);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.tk-accordion__item + .tk-accordion__item {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* The question is an h3 so it keeps its place in the document outline and
+   stays reachable by screen-reader heading navigation. Everything that
+   makes an h3 look like a heading is stripped, because here it is a row. */
+.tk-block .tk-accordion__q {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: var(--tk-fs-md);
+    font-weight: 600;
+}
+
+.tk-accordion__btn {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem var(--tk-pad);
+    color: var(--tk-fg-strong);
+    font-size: var(--tk-fs-md);
+    font-weight: 600;
+    line-height: 1.45;
+    text-align: left;
+}
+
+.tk-accordion__btn:hover {
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--tk-accent-400);
+}
+
+/* Plus/minus rather than a chevron: it reads as "expandable" even at very
+   small sizes, and the state change is unmistakable. */
+.tk-accordion__btn::after {
+    content: "\002B"; /* + */
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border: 1px solid var(--tk-border-strong);
+    border-radius: var(--tk-radius-pill);
+    color: var(--tk-accent);
+    font-family: var(--tk-mono);
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
+    transition:
+        background var(--tk-dur) var(--tk-ease),
+        border-color var(--tk-dur) var(--tk-ease);
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tk-accordion__btn[aria-expanded="true"]::after {
+    content: "\2212"; /* − */
+    border-color: var(--tk-accent-400);
+    background: var(--tk-accent-soft);
+}
+
+.tk-accordion__a {
+    padding: 0 var(--tk-pad) var(--tk-pad);
+    color: var(--tk-fg-soft);
+    font-size: var(--tk-fs-sm);
+}
+
+/* Without JS every answer is open, so each needs its own top spacing. */
+.tk-accordion:not([data-tk-ready]) .tk-accordion__a {
+    padding-top: 0.5rem;
+}
+
+/* ── tabs ───────────────────────────────────────────────────────────────
+   data-tk="tabs"  ·  data-active=<1-based index>
+
+   With JS off the labels stay visible and every panel is shown, so the
+   block reads as a run of small subsections.                            */
+
+.tk-tabs {
+    border: 1px solid var(--tk-border);
+    border-radius: var(--tk-radius-lg);
+    background: var(--tk-surface);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.tk-tabs__list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.15rem;
+    padding: 0.35rem 0.35rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+}
+
+.tk-tabs__tab {
+    flex: 0 0 auto;
+    padding: 0.5rem 0.9rem;
+    border-bottom: 2px solid transparent;
+    border-radius: var(--tk-radius-sm) var(--tk-radius-sm) 0 0;
+    color: var(--tk-fg-muted);
+    font-size: var(--tk-fs-sm);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tk-tabs__tab:hover {
+    background: var(--tk-surface-2);
+    color: var(--tk-fg-strong);
+}
+
+.tk-tabs__tab[aria-selected="true"] {
+    border-bottom-color: var(--tk-accent-400);
+    background: var(--tk-surface-2);
+    color: var(--tk-accent);
+}
+
+.tk-tabs__panel {
+    padding: var(--tk-pad);
+    color: var(--tk-fg-soft);
+}
+
+/* The panel is focusable so it can be scrolled by keyboard; the outline is
+   suppressed for pointer focus only, never for :focus-visible. */
+.tk-tabs__panel:focus {
+    outline: none;
+}
+
+/* Label styling only matters in the JS-off case — once the runtime runs it
+   is hidden and the tab button carries the name. */
+.tk-block .tk-tabs__label {
+    margin: 0 0 0.4rem;
+    padding: 0;
+    border: 0;
+    color: var(--tk-accent);
+    font-size: var(--tk-fs-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.tk-tabs:not([data-tk-ready]) .tk-tabs__panel + .tk-tabs__panel {
+    border-top: 1px solid var(--tk-border);
+}
+
+/* ── terminal with copy ─────────────────────────────────────────────────
+   data-tk="terminal"  ·  data-label  ·  data-copy-label
+
+   `pre` is not on the allowed-tag list, so each command is its own
+   paragraph. That turns out better than a pre block anyway: the lines wrap
+   properly on a phone, and the `$` prompt is a pseudo-element, so what
+   lands on the clipboard is the command and nothing else.               */
+
+.tk-term {
+    border: 1px solid var(--tk-border-strong);
+    border-radius: var(--tk-radius-lg);
+    background: rgba(11, 17, 32, 0.7);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.tk-term__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.4rem 0.4rem 0.4rem 0.85rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(148, 163, 184, 0.08);
+}
+
+.tk-term__label {
+    color: #94a3b8;
+    font-family: var(--tk-mono);
+    font-size: var(--tk-fs-xs);
+    letter-spacing: 0.04em;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.tk-term__copy {
+    padding: 0.28rem 0.7rem;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: var(--tk-radius-sm);
+    color: #cbd5e1;
+    font-size: var(--tk-fs-xs);
+    font-weight: 600;
+}
+
+.tk-term__copy:hover {
+    border-color: var(--tk-accent-400);
+    color: var(--tk-accent);
+}
+
+.tk-term__copy--done {
+    border-color: var(--tk-success);
+    color: var(--tk-success);
+}
+
+.tk-term__body {
+    padding: 0.8rem 0.95rem;
+    overflow-x: auto;
+}
+
+.tk-block .tk-term__line {
+    display: flex;
+    gap: 0.55rem;
+    margin: 0 0 0.3rem;
+    color: #e2e8f0;
+    font-family: var(--tk-mono);
+    font-size: var(--tk-fs-sm);
+    line-height: 1.6;
+}
+
+.tk-block .tk-term__line:last-child {
+    margin-bottom: 0;
+}
+
+/* The prompt. Decorative, unselectable, and — crucially — not part of
+   textContent, so it never reaches the clipboard. */
+.tk-term__line::before {
+    content: "$";
+    flex: 0 0 auto;
+    color: var(--tk-accent-400);
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Output lines: no prompt, dimmed, for showing what a command prints. */
+.tk-term__line[data-kind="out"]::before {
+    content: " ";
+    color: transparent;
+}
+
+.tk-term__line[data-kind="out"] {
+    color: #94a3b8;
+}
+
+/* Commands are wrapped in <code>; base.css and blogpost.css both give bare
+   <code> a chip-like background, which would tile behind every line. */
+.tk-block .tk-term__line code {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Progress blocks: checklist · table of contents
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── checklist ──────────────────────────────────────────────────────────
+   data-tk="checklist"  ·  data-tk-id  ·  data-persist  ·  data-reset-label */
+
+.tk-checklist {
+    padding: var(--tk-pad) var(--tk-pad-lg);
+    border: 1px solid var(--tk-border);
+    border-radius: var(--tk-radius);
+    background: var(--tk-surface);
+}
+
+.tk-block .tk-checklist__title {
+    margin: 0 0 0.6rem;
+    padding: 0;
+    border: 0;
+    color: var(--tk-fg-strong);
+    font-size: var(--tk-fs-lg);
+    font-weight: 650;
+}
+
+.tk-checklist__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+}
+
+.tk-checklist__count {
+    color: var(--tk-fg-muted);
+    font-family: var(--tk-mono);
+    font-size: var(--tk-fs-xs);
+    letter-spacing: 0.04em;
+}
+
+.tk-checklist__reset {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--tk-border-strong);
+    border-radius: var(--tk-radius-pill);
+    color: var(--tk-fg-muted);
+    font-size: var(--tk-fs-xs);
+    font-weight: 600;
+}
+
+.tk-checklist__reset:hover:not(:disabled) {
+    border-color: var(--tk-danger);
+    color: var(--tk-danger);
+}
+
+.tk-checklist__bar {
+    height: 5px;
+    margin-bottom: var(--tk-pad);
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-surface-sunken);
+    overflow: hidden;
+}
+
+/* Width comes from a custom property the runtime sets on the block root, so
+   no inline style declaration is ever written into the markup. */
+.tk-checklist__fill {
+    width: var(--tk-cl-progress, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background-image: linear-gradient(
+        90deg,
+        var(--tk-grad-from) 0%,
+        var(--tk-grad-to) 100%
+    );
+    transition: width 260ms var(--tk-ease-out);
+}
+
+.tk-checklist__list {
+    margin: 0;
+    padding: 0;
+}
+
+.tk-checklist__item {
+    margin: 0;
+    padding: 0;
+}
+
+.tk-checklist__item + .tk-checklist__item {
+    border-top: 1px solid var(--tk-border);
+}
+
+/* The label the runtime wraps around each item: implicit association with
+   the checkbox, so the whole row is clickable. */
+.tk-checklist__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.5rem 0.15rem;
+    color: var(--tk-fg-soft);
+    font-size: var(--tk-fs-sm);
+    line-height: 1.55;
+    cursor: pointer;
+    transition: color var(--tk-dur) var(--tk-ease);
+}
+
+.tk-checklist__row:hover {
+    color: var(--tk-fg-strong);
+}
+
+.tk-checklist__box {
+    flex: 0 0 auto;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0.22rem 0 0;
+    accent-color: var(--tk-accent-500);
+    cursor: pointer;
+}
+
+.tk-checklist__item[data-done] .tk-checklist__row {
+    color: var(--tk-fg-faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--tk-border-strong);
+}
+
+/* JS-off fallback: an empty ballot box so the list still reads as a
+   checklist rather than as a bulletless list of fragments. */
+.tk-checklist:not([data-tk-ready]) .tk-checklist__item {
+    padding: 0.35rem 0;
+    color: var(--tk-fg-soft);
+    font-size: var(--tk-fs-sm);
+}
+
+.tk-checklist:not([data-tk-ready]) .tk-checklist__item::before {
+    content: "\2610\00A0\00A0"; /* ☐ + spacing */
+    color: var(--tk-fg-muted);
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* ── table of contents ──────────────────────────────────────────────────
+   data-tk="toc"  ·  data-variant=inline|sticky  ·  data-levels                */
+
+.tk-toc {
+    padding: var(--tk-pad) var(--tk-pad-lg);
+    border: 1px solid var(--tk-border);
+    border-left: 3px solid var(--tk-accent-400);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-surface);
+}
+
+.tk-block .tk-toc__title {
+    margin: 0 0 0.5rem;
+    padding: 0;
+    border: 0;
+    color: var(--tk-accent);
+    font-size: var(--tk-fs-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+}
+
+/* Shown only until the runtime replaces it with the real list, so a reader
+   with JavaScript off gets a sentence instead of an empty box. */
+.tk-toc__fallback {
+    margin: 0;
+    color: var(--tk-fg-muted);
+    font-size: var(--tk-fs-sm);
+}
+
+.tk-toc__list {
+    margin: 0;
+    padding: 0;
+}
+
+.tk-toc__item {
+    margin: 0;
+}
+
+.tk-block a.tk-toc__link {
+    display: block;
+    padding: 0.24rem 0 0.24rem 0.7rem;
+    border-left: 2px solid var(--tk-border);
+    background-image: none;
+    background-size: auto;
+    color: var(--tk-fg-muted);
+    font-size: var(--tk-fs-sm);
+    line-height: 1.45;
+    text-decoration: none;
+    word-break: normal;
+    overflow-wrap: break-word;
+    transition:
+        color var(--tk-dur) var(--tk-ease),
+        border-color var(--tk-dur) var(--tk-ease);
+}
+
+.tk-block a.tk-toc__link:hover {
+    border-left-color: var(--tk-border-strong);
+    color: var(--tk-fg-strong);
+}
+
+.tk-block a.tk-toc__link--active {
+    border-left-color: var(--tk-accent-400);
+    color: var(--tk-accent);
+    font-weight: 600;
+}
+
+/* Nested levels are indented by their heading depth. h2 keeps the base
+   indent; h3 and h4 step in from it. */
+.tk-block a.tk-toc__link[data-level="h3"] {
+    padding-left: 1.5rem;
+    font-size: var(--tk-fs-xs);
+}
+
+.tk-block a.tk-toc__link[data-level="h4"] {
+    padding-left: 2.3rem;
+    font-size: var(--tk-fs-xs);
+}
+
+/* Stops the sticky site nav from covering a heading that was just jumped
+   to. Applied by the runtime to every heading the TOC targets. */
+.tk-toc-target {
+    scroll-margin-top: 5.5rem;
+}
+
+/* Sticky variant. Sticks within the article column while the reader moves
+   through it, and reverts to a normal block on narrow screens where there
+   is no spare width and a pinned panel would just eat the viewport. */
+.tk-toc[data-variant="sticky"] {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 4.75rem;
+    z-index: 1;
+    max-height: calc(100vh - 7rem);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    background: var(--tk-surface-2);
+}
+
+@media (max-width: 48rem) {
+    .tk-toc[data-variant="sticky"] {
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Recall blocks: quiz · flashcards
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── quiz ───────────────────────────────────────────────────────────────
+   data-tk="quiz" · question data-type=single|multi|true-false
+   Controls, feedback and score chrome are all runtime-created.             */
+
+.tk-quiz,
+.tk-cards {
+    padding: 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--tk-radius-lg);
+    background: linear-gradient(145deg, var(--tk-surface), rgba(0, 0, 0, 0.02));
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tk-quiz:hover,
+.tk-cards:hover {
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
+.tk-block .tk-quiz__title,
+.tk-block .tk-cards__title {
+    margin: 0 0 1rem;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--tk-accent-200), var(--tk-accent-500));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.tk-quiz__q {
+    padding: 0;
+    border-top: none;
+}
+
+.tk-block .tk-quiz__prompt {
+    margin: 0 0 1.25rem;
+    color: var(--tk-fg-strong);
+    font-size: 1.15rem;
+    font-weight: 650;
+    line-height: 1.45;
+}
+
+.tk-quiz__options {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+}
+
+.tk-quiz__option {
+    position: relative;
+    margin: 0;
+    border: 1px solid var(--tk-border-strong);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-surface-sunken);
+    color: var(--tk-fg-soft);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.tk-quiz__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+}
+
+.tk-quiz__option:hover {
+    border-color: var(--tk-accent-400);
+    background: var(--tk-surface);
+    color: var(--tk-fg-strong);
+    box-shadow: 0 0 0 3px var(--tk-accent-soft), inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    transform: translateY(-1px);
+}
+
+.tk-quiz__input {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0.15rem 0 0;
+    accent-color: var(--tk-accent-500);
+    cursor: pointer;
+}
+
+.tk-quiz__input:disabled,
+.tk-quiz__input:disabled + * {
+    cursor: default;
+}
+
+.tk-quiz__option[data-mark="hit"],
+.tk-quiz__option[data-mark="answer"] {
+    border-color: var(--tk-success);
+    background: var(--tk-success-wash);
+    color: var(--tk-fg-strong);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.tk-quiz__option[data-mark="miss"] {
+    border-color: var(--tk-danger);
+    background: var(--tk-danger-wash);
+    color: var(--tk-fg-strong);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.tk-quiz__option[data-mark]::after {
+    position: absolute;
+    top: 0.9rem;
+    right: 1rem;
+    color: var(--tk-success);
+    font-weight: 800;
+    content: "\2713";
+}
+
+.tk-quiz__option[data-mark="miss"]::after {
+    color: var(--tk-danger);
+    content: "\2715";
+}
+
+.tk-quiz__check,
+.tk-quiz__retry,
+.tk-quiz__nav,
+.tk-cards__nav,
+.tk-cards__flip,
+.tk-cards__shuffle {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--tk-border-strong);
+    border-radius: var(--tk-radius-pill);
+    color: var(--tk-fg-soft);
+    font-size: var(--tk-fs-sm);
+    font-weight: 650;
+    transition: all 0.2s ease;
+    background: var(--tk-surface-2);
+}
+
+.tk-quiz__check {
+    margin-top: 1rem;
+}
+
+.tk-quiz__check:hover,
+.tk-quiz__retry:hover:not(:disabled),
+.tk-quiz__nav:hover:not(:disabled),
+.tk-cards__nav:hover:not(:disabled),
+.tk-cards__flip:hover:not(:disabled),
+.tk-cards__shuffle:hover:not(:disabled) {
+    border-color: var(--tk-accent-400);
+    background: var(--tk-accent-soft);
+    color: var(--tk-accent);
+}
+
+.tk-block .tk-quiz__explain {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-left: 3px solid var(--tk-accent-400);
+    border-radius: 0 var(--tk-radius-sm) var(--tk-radius-sm) 0;
+    background: var(--tk-accent-soft);
+    color: var(--tk-fg-soft);
+    font-size: var(--tk-fs-sm);
+}
+
+.tk-quiz__bar,
+.tk-cards__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.tk-quiz__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--tk-border);
+}
+
+.tk-quiz__count,
+.tk-cards__count {
+    min-width: 4rem;
+    color: var(--tk-fg-muted);
+    font-family: var(--tk-mono);
+    font-size: var(--tk-fs-sm);
+    text-align: center;
+}
+
+.tk-quiz__score {
+    color: var(--tk-fg-strong);
+    font-family: var(--tk-mono);
+    font-size: var(--tk-fs-sm);
+    font-weight: 700;
+}
+
+.tk-quiz__best {
+    color: var(--tk-success);
+    font-size: var(--tk-fs-xs);
+    font-weight: 650;
+}
+
+.tk-quiz__retry {
+    margin-left: auto;
+}
+
+/* Before runtime, options remain ordinary visible list rows. */
+.tk-quiz:not([data-tk-ready]) .tk-quiz__option {
+    padding: 0.75rem 1rem;
+}
+
+/* ── flashcards ─────────────────────────────────────────────────────────
+   data-tk="flashcards" · data-shuffle=yes|no                             */
+
+.tk-cards__card {
+    min-height: 14rem;
+    padding: 2rem;
+    border: 1px solid var(--tk-border-strong);
+    border-radius: var(--tk-radius-lg);
+    background:
+        linear-gradient(135deg, rgba(6, 182, 212, 0.05), transparent 60%),
+        var(--tk-surface-2);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s ease;
+}
+
+.tk-cards__card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(6, 182, 212, 0.2);
+}
+
+.tk-block .tk-cards__front {
+    display: flex;
+    min-height: 8rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    color: var(--tk-fg-strong);
+    font-size: 1.35rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+.tk-cards__back {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--tk-border);
+    color: var(--tk-fg-soft);
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.tk-cards__flip[aria-expanded="true"] {
+    border-color: var(--tk-success);
+    background: var(--tk-success-wash);
+    color: var(--tk-success);
+}
+
+/* JS-off fallback: every front/back pair is shown as a readable glossary. */
+.tk-cards:not([data-tk-ready]) .tk-cards__card {
+    min-height: 0;
+    margin-top: 1rem;
+}
+
+.tk-cards:not([data-tk-ready]) .tk-cards__card:first-of-type {
+    margin-top: 0;
+}
+
+@media (max-width: 30rem) {
+    .tk-quiz,
+    .tk-cards {
+        padding: 1.5rem;
+    }
+
+    .tk-cards__card {
+        padding: 1.25rem;
+    }
+
+    .tk-cards__flip,
+    .tk-cards__shuffle {
+        flex: 1 1 auto;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Feedback blocks: Google Forms bridge · rating
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.tk-form,
+.tk-rating {
+    padding: 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--tk-radius-lg);
+    background: linear-gradient(145deg, var(--tk-surface), rgba(0, 0, 0, 0.02));
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tk-form:hover {
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
+.tk-block .tk-form__title,
+.tk-block .tk-rating__prompt {
+    margin: 0 0 0.5rem;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--tk-accent-200), var(--tk-accent-500));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.tk-form__intro,
+.tk-rating__fallback {
+    color: var(--tk-fg-soft);
+    font-size: var(--tk-fs-md);
+    margin-bottom: 1.5rem;
+}
+
+.tk-form__form,
+.tk-form__fields {
+    display: grid;
+    gap: 1.25rem;
+    margin-top: 1.2rem;
+}
+
+.tk-form__field {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.tk-form__label {
+    color: var(--tk-fg-soft);
+    font-size: var(--tk-fs-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: 0.2rem;
+}
+
+.tk-form__label[data-required]::after {
+    margin-left: 0.25rem;
+    color: var(--tk-danger);
+    content: "*";
+}
+
+/* Treat all inputs inside field as controls, also fallback to the class */
+.tk-form__field input,
+.tk-form__field textarea,
+.tk-form__field select,
+.tk-form__control {
+    width: 100%;
+    min-height: 2.8rem;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--tk-border-strong);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-surface-sunken);
+    color: var(--tk-fg-strong);
+    font: inherit;
+    font-size: var(--tk-fs-md);
+    line-height: 1.5;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.tk-form__field textarea,
+textarea.tk-form__control {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.tk-form__field select,
+select.tk-form__control {
+    cursor: pointer;
+}
+
+.tk-form__field input::placeholder,
+.tk-form__field textarea::placeholder,
+.tk-form__control::placeholder {
+    color: var(--tk-fg-faint);
+}
+
+.tk-form__field input:focus,
+.tk-form__field textarea:focus,
+.tk-form__field select:focus,
+.tk-form__control:focus {
+    outline: none;
+    border-color: var(--tk-accent-400);
+    background: var(--tk-surface);
+    box-shadow: 0 0 0 3px var(--tk-accent-soft), inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    transform: translateY(-1px);
+}
+
+.tk-form__choices {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.tk-form__choice-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--tk-border);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-surface-2);
+    color: var(--tk-fg-soft);
+    font-size: var(--tk-fs-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tk-form__choice-row:hover {
+    border-color: var(--tk-accent-400);
+    background: var(--tk-surface-3);
+    color: var(--tk-fg-strong);
+    transform: translateX(2px);
+}
+
+.tk-form__choice {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0.15rem 0 0;
+    accent-color: var(--tk-accent-500);
+}
+
+.tk-form__error {
+    min-height: 1.1em;
+    color: var(--tk-danger);
+    font-size: var(--tk-fs-xs);
+    margin-top: 0.25rem;
+}
+
+.tk-form__field[data-invalid] input,
+.tk-form__field[data-invalid] textarea,
+.tk-form__field[data-invalid] select,
+.tk-form__field[data-invalid] .tk-form__control,
+.tk-form__field[data-invalid] .tk-form__choice-row {
+    border-color: var(--tk-danger);
+    box-shadow: 0 0 0 3px var(--tk-danger-wash);
+}
+
+.tk-form__trap,
+.tk-form__transport {
+    position: fixed !important;
+    left: -10000px !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.tk-form__actions {
+    margin-top: 1.5rem;
+}
+
+.tk-form__submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.8rem 1.5rem;
+    border-radius: var(--control-radius, 0.75rem);
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transition:
+        background var(--dur-fast, 0.15s) ease,
+        border-color var(--dur-fast, 0.15s) ease,
+        color var(--dur-fast, 0.15s) ease,
+        box-shadow var(--dur-fast, 0.15s) ease,
+        transform var(--dur-release, 0.4s) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    background: linear-gradient(180deg, rgba(6, 182, 212, 0.12) 0%, rgba(6, 182, 212, 0.03) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--accent-100, #cffafe);
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(6, 182, 212, 0.15);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tk-form__submit:hover:not(:disabled) {
+    background: linear-gradient(180deg, rgba(6, 182, 212, 0.18) 0%, rgba(6, 182, 212, 0.06) 100%);
+    border-color: rgba(6, 182, 212, 0.35);
+    color: #ffffff;
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(6, 182, 212, 0.25);
+}
+
+.tk-form__submit:active:not(:disabled) {
+    transform: scale(0.97) translate3d(0, 0, 0);
+}
+
+.tk-form__submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tk-form__status,
+.tk-rating__status {
+    min-height: 1.4em;
+    margin: 0;
+    color: var(--tk-fg-muted);
+    font-size: var(--tk-fs-sm);
+}
+
+.tk-form[data-state="success"] .tk-form__status,
+.tk-rating[data-state="success"] .tk-rating__status {
+    color: var(--tk-success);
+}
+
+.tk-form[data-state="error"] .tk-form__status,
+.tk-rating[data-state="error"] .tk-rating__status {
+    color: var(--tk-danger);
+}
+
+.tk-form[data-state="submitting"] .tk-form__status,
+.tk-rating[data-state="submitting"] .tk-rating__status {
+    color: var(--tk-accent);
+}
+
+/* Before JS, the field descriptions explain what the unavailable controls
+   would collect instead of leaving a blank form-shaped panel. */
+.tk-form:not([data-tk-ready]) .tk-form__fallback {
+    padding: 0.45rem 0;
+    border-bottom: 1px solid var(--tk-border);
+    color: var(--tk-fg-muted);
+    font-size: var(--tk-fs-sm);
+}
+
+.tk-rating__controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    margin-top: 0.75rem;
+}
+
+.tk-rating__button {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--tk-border-strong);
+    border-radius: var(--tk-radius-pill);
+    color: var(--tk-fg-soft);
+    font-size: var(--tk-fs-sm);
+    font-weight: 650;
+}
+
+.tk-rating__button::before {
+    font-size: 1rem;
+}
+
+.tk-rating__button--up::before {
+    content: "\1F44D";
+}
+
+.tk-rating__button--down::before {
+    content: "\1F44E";
+}
+
+.tk-rating__button:hover:not(:disabled) {
+    border-color: var(--tk-accent-400);
+    background: var(--tk-accent-soft);
+    color: var(--tk-accent);
+}
+
+.tk-rating__button[aria-pressed="true"] {
+    border-color: var(--tk-success);
+    background: var(--tk-success-wash);
+    color: var(--tk-success);
+}
+
+.tk-rating__status {
+    margin-top: 0.65rem;
+}
+
+@media (max-width: 30rem) {
+    .tk-form,
+    .tk-rating {
+        padding: var(--tk-pad);
+    }
+
+    .tk-form__submit,
+    .tk-rating__button {
+        width: 100%;
+    }
+}

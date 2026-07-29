@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load blog_extras %}
 
 {% block title %}About{% endblock title %}
 
@@ -43,6 +44,9 @@
     href="{% static 'css/about.css' %}?v={{ STATIC_ASSET_VERSION }}"
 />
 <link rel="stylesheet" href="https://unpkg.com/github-calendar@2.3.4/dist/github-calendar-responsive.css"/>
+{% if about_me.bio and 'data-tk' in about_me.bio %}
+{% include 'partials/_content_tools_css.html' %}
+{% endif %}
 {% endblock meta %} {% block content %}
 
 <div class="px-8 md:px-20 w-full mt-6 md:mt-8 mb-2 reveal">
@@ -190,7 +194,8 @@
     </div>
 
     <!-- Bio Content -->
-    <div class="blog-content ck-content leading-relaxed mt-2 reveal-fade">
+    <!-- data-tk-page namespaces Content Toolkit localStorage keys to this page. -->
+    <div class="blog-content ck-content leading-relaxed mt-2 reveal-fade" data-tk-page="about">
         {{ about_me.bio|safe }}
     </div>
     {% else %}
@@ -501,6 +506,9 @@
 
 </div>
 <script data-cfasync="false" src="{% static 'js/about.js' %}?v={{ STATIC_ASSET_VERSION }}"></script>
+{% if about_me.bio|needs_content_tools_runtime %}
+{% include 'partials/_content_tools_js.html' %}
+{% endif %}
 
 <!-- GitHub Calendar Library + Stats (must be in content block so HTMX re-executes on every navigation) -->
 <script data-cfasync="false" src="https://unpkg.com/github-calendar@2.3.4/dist/github-calendar.min.js"></script>

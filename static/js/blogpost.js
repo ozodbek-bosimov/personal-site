@@ -5,6 +5,10 @@
       window.removeEventListener("scroll", window._blogpostScrollListener);
       window._blogpostScrollListener = null;
     }
+    if (window._tocScrollListener) {
+      window.removeEventListener("scroll", window._tocScrollListener);
+      window._tocScrollListener = null;
+    }
 
     /* ── Lazy Load Iframes (Run First to ensure they load even if other things fail) ────────────────────────────────────────── */
     function runLazyIframes() {
@@ -226,6 +230,114 @@
       window._blogpostScrollListener = updateProgressBar;
       window.addEventListener("scroll", window._blogpostScrollListener, { passive: true });
       updateProgressBar();
+    }
+
+    /* ── Floating Table of Contents ───────────────────────────────── */
+    const tocContainer = document.getElementById("toc-sidebar-container");
+    const tocBox = document.getElementById("toc-box");
+    const tocNav = document.getElementById("floating-toc-nav");
+    const blogContent = document.querySelector(".blog-content");
+
+    if (tocContainer && tocBox && tocNav && blogContent) {
+      // The post body can contain interactive toolkit blocks (accordions,
+      // flashcards, pros/cons, forms, etc.). Their internal headings are
+      // control labels, not article sections, so showing them in the floating
+      // table of contents makes the menu noisy and can jump readers into a
+      // widget rather than a section of the post.
+      const headings = Array.from(blogContent.querySelectorAll("h2, h3")).filter(
+        (heading) => {
+          const label = heading.textContent.replace(/\u00a0/g, " ").trim();
+          return (
+            label &&
+            !heading.hidden &&
+            !heading.closest(
+              "[data-tk], nav, aside, form, button, [role='tab'], [role='dialog'], details",
+            )
+          );
+        },
+      );
+      
+      if (headings.length >= 2) {
+        tocContainer.style.display = "";
+        tocNav.innerHTML = "";
+        
+        let activeLink = null;
+        
+        headings.forEach((heading, index) => {
+          if (!heading.id) {
+            heading.id = "heading-" + index;
+          }
+          const link = document.createElement("a");
+          link.href = "#" + heading.id;
+          // Item container - fixed height so dashes never shift apart
+          link.className = "toc-item relative group/item flex items-center justify-start w-full min-w-0 cursor-pointer transition-colors h-7 shrink-0";
+          
+          // The Dash (visible when not hovered, positioned absolutely so it doesn't affect width)
+          const dash = document.createElement("span");
+          dash.className = "toc-dash absolute right-2 w-5 h-[3px] rounded-full bg-gray-600";
+          
+          // The Text (visible when hovered)
+          const text = document.createElement("span");
+          text.textContent = heading.textContent;
+          text.className = "toc-text text-[13px] text-gray-400 truncate rounded-lg px-2 py-1 transition-all flex-1 min-w-0 text-left";
+          
+          if (heading.tagName.toLowerCase() === "h3") {
+            text.classList.add("text-[12px]", "ml-3");
+          } else {
+            text.classList.add("font-medium");
+          }
+          
+          link.appendChild(dash);
+          link.appendChild(text);
+          
+          link.addEventListener("click", (e) => {
+             e.preventDefault();
+             window.scrollTo({
+                 top: heading.getBoundingClientRect().top + window.scrollY - 80,
+                 behavior: "smooth"
+             });
+          });
+          
+          tocNav.appendChild(link);
+          heading._tocLink = link;
+          heading._tocDash = dash;
+          heading._tocText = text;
+        });
+
+        function onScrollToc() {
+            let current = null;
+            for (let i = 0; i < headings.length; i++) {
+                if (headings[i].getBoundingClientRect().top < 150) {
+                    current = headings[i];
+                } else {
+                    break;
+                }
+            }
+            if (!current && headings.length && window.scrollY < 100) {
+                current = null;
+            } else if (!current && headings.length) {
+                current = headings[0];
+            }
+            
+            if (activeLink) {
+                activeLink._tocDash.classList.remove("bg-white");
+                activeLink._tocDash.classList.add("bg-gray-600");
+                activeLink._tocLink.classList.remove("is-active");
+            }
+            if (current && current._tocLink) {
+                activeLink = current;
+                activeLink._tocDash.classList.remove("bg-gray-600");
+                activeLink._tocDash.classList.add("bg-white");
+                activeLink._tocLink.classList.add("is-active");
+            }
+        }
+        
+        window._tocScrollListener = onScrollToc;
+        window.addEventListener("scroll", window._tocScrollListener, { passive: true });
+        onScrollToc();
+      } else {
+        tocContainer.style.display = "none";
+      }
     }
 
     /* ── Copy Link Button ─────────────────────────────────────────── */

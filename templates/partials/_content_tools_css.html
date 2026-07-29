@@ -1,0 +1,13 @@
+{% load static %}
+{% comment %}
+Content Toolkit stylesheet.
+
+Included only when the rendered rich text actually contains a `data-tk`
+marker, so a post that uses no toolkit blocks downloads nothing extra.
+Belongs in {% block meta %} (i.e. inside <head>) so htmx's head-support
+extension can carry it across boosted navigations.
+{% endcomment %}
+<link
+    rel="stylesheet"
+    href="{% static 'css/content-tools.css' %}?v={{ STATIC_ASSET_VERSION }}"
+/>

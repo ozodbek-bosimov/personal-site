@@ -1,0 +1,27 @@
+<!-- tk:meta
+name: Pros & cons
+tool: pros-cons
+group: Structure
+description: Two tinted columns for weighing an option. Green ticks on the left, red crosses on the right.
+interactive: no
+param: data-kind :: pro | con :: pro :: On each column. Sets the accent colour and the list marker.
+param: column title :: text :: Pros / Cons :: Rename freely — "Worth it" / "Watch out", "Before" / "After".
+a11y: Two separate lists rather than a table, so each column is announced with its own heading and item count.
+limits: Two columns. The grid will accept a third but the colour vocabulary only has two meanings.
+-->
+<div class="tk-block tk-proscons" data-tk="pros-cons">
+    <div class="tk-proscons__col" data-kind="pro">
+        <p class="tk-proscons__title">Pros</p>
+        <ul class="tk-list tk-proscons__list">
+            <li>Something that genuinely argues for it.</li>
+            <li>Another real advantage, stated plainly.</li>
+        </ul>
+    </div>
+    <div class="tk-proscons__col" data-kind="con">
+        <p class="tk-proscons__title">Cons</p>
+        <ul class="tk-list tk-proscons__list">
+            <li>The cost, honestly described.</li>
+            <li>The case where this is the wrong choice.</li>
+        </ul>
+    </div>
+</div>

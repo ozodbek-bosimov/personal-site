@@ -1,0 +1,22 @@
+<!-- tk:meta
+name: Checklist
+tool: checklist
+group: Progress
+description: A tickable list that remembers where the reader got to, with a progress bar and a clear button.
+interactive: yes
+param: data-tk-id :: short slug :: (position in page) :: Storage key for this block. Set it on any checklist whose progress is worth keeping — without it the key falls back to the block's position, which shifts if blocks are reordered.
+param: data-persist :: yes | no :: yes :: Set no for a throwaway checklist that should start empty on every visit.
+param: data-reset-label :: text :: Clear :: Label of the button that unticks everything.
+param: title paragraph :: text :: — :: Optional p.tk-checklist__title. Also used as the accessible name of the progress bar.
+a11y: Real checkboxes wrapped in labels, so the whole row is clickable and keyboard behaviour is the browser's. The counter is a polite live region and the bar is a progressbar with aria-valuetext.
+limits: Progress lives in this browser's localStorage only — it does not follow the reader to another device, and private browsing loses it on close. Item state is keyed on the item's text, so rewording an item resets that one line.
+-->
+<div class="tk-block tk-checklist" data-tk="checklist" data-tk-id="setup">
+    <p class="tk-checklist__title">Before you start</p>
+    <ul class="tk-list tk-checklist__list">
+        <li class="tk-checklist__item">Python 3.12 or newer is installed</li>
+        <li class="tk-checklist__item">A virtual environment is created and activated</li>
+        <li class="tk-checklist__item">Dependencies are installed from <code>requirements.txt</code></li>
+        <li class="tk-checklist__item">The <code>.env</code> file is filled in</li>
+    </ul>
+</div>
