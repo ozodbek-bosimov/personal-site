@@ -1,14 +1,16 @@
-/* ── Reading Progress Bar ───────────────────────────────────────── */
 #reading-progress-bar {
     position: fixed;
     top: 0;
     left: 0;
-    width: 0%;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent-500), #3b82f6);
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #06b6d4, #3b82f6, #6366f1);
     z-index: 9999;
-    transition: width 0.1s linear;
-    box-shadow: 0 0 12px rgba(6, 182, 212, 0.6);
+    transform: scaleX(0);
+    transform-origin: left center;
+    will-change: transform;
+    pointer-events: none;
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.8);
 }
 
 

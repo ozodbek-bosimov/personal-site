@@ -131,60 +131,145 @@
 
 <!-- Built-in Table of Contents (Fixed Right Sidebar) -->
 <style>
-/* TOC Base Styles */
+/* TOC Base Styles - Pure CSS to prevent Tailwind compilation dependency */
+#toc-sidebar-container {
+    position: fixed;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 40;
+    padding-left: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    cursor: default;
+}
+
 #toc-box {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 2rem;
-    max-height: 75vh;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, border-color 0.3s ease;
+    width: 2.5rem;
+    max-height: calc(100vh - 180px);
     padding: 0.5rem 0.25rem;
     border: 1px solid transparent;
     background-color: transparent;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
+#toc-box::-webkit-scrollbar {
+    display: none;
+}
+
+#floating-toc-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 100%;
+}
+
+.toc-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    height: 1.5rem;
+    margin: 2px 0;
+    padding: 0 4px;
+    cursor: pointer;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
 .toc-dash {
-    transition: opacity 0.15s ease;
+    display: block;
+    width: 20px;
+    height: 3px;
+    border-radius: 9999px;
+    background-color: #94a3b8;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
 }
+
+.toc-item.is-active .toc-dash,
+.toc-dash.is-active-dash {
+    width: 28px !important;
+    background-color: #22d3ee !important;
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.9) !important;
+}
+
 .toc-text {
-    transition: all 0.3s ease;
-    opacity: 0;
+    font-size: 12px;
+    line-height: 16px;
+    color: #94a3b8;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin: 0 !important; /* Ensure all text lines start on the exact same left line */
+    transition: opacity 0.25s ease, color 0.2s ease, background-color 0.2s ease;
+    opacity: 0;
+    display: none;
+    flex: 1 1 0%;
+    min-width: 0;
+    text-align: left;
+}
+
+/* Hide TOC on mobile viewports (< 768px) */
+@media (max-width: 767px) {
+    #toc-sidebar-container {
+        display: none !important;
+    }
 }
 
 /* TOC Hover Styles */
 #toc-sidebar-container:hover #toc-box {
-    width: 320px;
-    background-color: rgba(17, 24, 39, 0.95); /* bg-gray-900/95 */
+    width: 310px;
+    background-color: rgba(15, 23, 42, 0.96); /* slate-900/96 */
     backdrop-filter: blur(24px);
-    padding: 0.75rem 0.5rem;
-    border-radius: 1rem;
-    border-color: rgb(31, 41, 55); /* border-gray-800 */
-    overflow-y: auto;
+    -webkit-backdrop-filter: blur(24px);
+    padding: 0.75rem 0.6rem;
+    border-radius: 0.85rem;
+    border-color: rgba(51, 65, 85, 0.8); /* slate-700 */
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
 }
+#toc-sidebar-container:hover #toc-box::-webkit-scrollbar {
+    display: block;
+    width: 4px;
+}
+#toc-sidebar-container:hover #toc-box::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 4px;
+}
+
+/* Show text, hide dash on hover */
 #toc-sidebar-container:hover .toc-dash {
-    opacity: 0;
+    display: none !important;
 }
 #toc-sidebar-container:hover .toc-text {
-    opacity: 1;
+    display: block !important;
+    opacity: 1 !important;
 }
+
 /* TOC Item Active/Hover Styles */
 .toc-item:not(.is-active):hover .toc-text {
-    color: white !important;
-    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #f8fafc !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
 }
 .toc-item.is-active .toc-text {
-    color: rgb(103, 232, 249) !important; /* text-cyan-300 */
-    background-color: rgba(255, 255, 255, 0.05) !important;
-}
-.hidden-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-.hidden-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    color: var(--accent-300, #67e8f9) !important;
+    background-color: rgba(6, 182, 212, 0.12) !important;
 }
 </style>
-<aside class="hidden xl:block fixed right-6 top-1/2 -translate-y-1/2 z-50 pl-20 py-10 cursor-default" id="toc-sidebar-container" style="display: none;">
-    <div id="toc-box" class="relative z-10 flex flex-col hidden-scrollbar">
-        <nav id="floating-toc-nav" class="flex flex-col">
+<aside id="toc-sidebar-container" style="display: none;">
+    <div id="toc-box">
+        <nav id="floating-toc-nav">
             <!-- Populated by JS -->
         </nav>
     </div>

@@ -218,16 +218,23 @@
     const progressBar = document.getElementById("reading-progress-bar");
 
     if (progressBar) {
+      let progressTicking = false;
       function updateProgressBar() {
         const scrollTop = window.scrollY || document.documentElement.scrollTop;
         const docHeight =
           document.documentElement.scrollHeight -
           document.documentElement.clientHeight;
-        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-        progressBar.style.width = Math.min(progress, 100) + "%";
+        const progress = docHeight > 0 ? Math.min(Math.max(scrollTop / docHeight, 0), 1) : 0;
+        progressBar.style.transform = `scaleX(${progress})`;
+        progressTicking = false;
       }
 
-      window._blogpostScrollListener = updateProgressBar;
+      window._blogpostScrollListener = function() {
+        if (!progressTicking) {
+          requestAnimationFrame(updateProgressBar);
+          progressTicking = true;
+        }
+      };
       window.addEventListener("scroll", window._blogpostScrollListener, { passive: true });
       updateProgressBar();
     }
@@ -251,14 +258,14 @@
             label &&
             !heading.hidden &&
             !heading.closest(
-              "[data-tk], nav, aside, form, button, [role='tab'], [role='dialog'], details",
+              ".tk-accordion, .tk-quiz, .tk-cards, .tk-tabs, .tk-form, .tk-rating, .tk-cta, .tk-spoiler, nav, aside, form, button, [role='tab'], [role='dialog'], details",
             )
           );
         },
       );
       
-      if (headings.length >= 2) {
-        tocContainer.style.display = "";
+      if (headings.length >= 1) {
+        tocContainer.style.display = "block";
         tocNav.innerHTML = "";
         
         let activeLink = null;
@@ -269,22 +276,22 @@
           }
           const link = document.createElement("a");
           link.href = "#" + heading.id;
-          // Item container - fixed height so dashes never shift apart
-          link.className = "toc-item relative group/item flex items-center justify-start w-full min-w-0 cursor-pointer transition-colors h-7 shrink-0";
+          // Item container - compact height so long TOC lists fit cleanly on any viewport
+          link.className = "toc-item group/item flex items-center justify-end w-full cursor-pointer transition-colors h-6 shrink-0 my-0.5 px-1";
           
-          // The Dash (visible when not hovered, positioned absolutely so it doesn't affect width)
+          // The Dash (visible when not hovered, crisp slate-400 tint)
           const dash = document.createElement("span");
-          dash.className = "toc-dash absolute right-2 w-5 h-[3px] rounded-full bg-gray-600";
+          dash.className = "toc-dash w-5 h-[2.5px] rounded-full bg-slate-400 transition-all duration-200";
           
           // The Text (visible when hovered)
           const text = document.createElement("span");
           text.textContent = heading.textContent;
-          text.className = "toc-text text-[13px] text-gray-400 truncate rounded-lg px-2 py-1 transition-all flex-1 min-w-0 text-left";
+          text.className = "toc-text text-[12px] text-slate-400 truncate rounded-md px-2 py-1 transition-all flex-1 min-w-0 text-left";
           
           if (heading.tagName.toLowerCase() === "h3") {
-            text.classList.add("text-[12px]", "ml-3");
+            text.classList.add("text-[11.5px]", "text-slate-400/80");
           } else {
-            text.classList.add("font-medium");
+            text.classList.add("font-semibold", "text-slate-200");
           }
           
           link.appendChild(dash);
@@ -320,15 +327,18 @@
             }
             
             if (activeLink) {
-                activeLink._tocDash.classList.remove("bg-white");
-                activeLink._tocDash.classList.add("bg-gray-600");
+                activeLink._tocDash.classList.remove("is-active-dash");
                 activeLink._tocLink.classList.remove("is-active");
             }
             if (current && current._tocLink) {
                 activeLink = current;
-                activeLink._tocDash.classList.remove("bg-gray-600");
-                activeLink._tocDash.classList.add("bg-white");
+                activeLink._tocDash.classList.add("is-active-dash");
                 activeLink._tocLink.classList.add("is-active");
+                if (activeLink._tocLink.scrollIntoViewIfNeeded) {
+                    activeLink._tocLink.scrollIntoViewIfNeeded(false);
+                } else if (activeLink._tocLink.scrollIntoView) {
+                    activeLink._tocLink.scrollIntoView({ block: "nearest", behavior: "smooth" });
+                }
             }
         }
         

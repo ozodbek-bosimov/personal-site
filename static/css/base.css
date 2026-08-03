@@ -1096,23 +1096,90 @@ span a.tapped,
 
 .blog-content ul,
 .blog-content ol {
-    margin-bottom: 1rem;
-    padding-left: 1.5rem;
+    margin-top: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-left: 2.25rem; /* Generous padding so multi-digit numbers, letters, and Roman numerals (VIII.) never get clipped */
     color: var(--text-strong);
-    line-height: 1.65;
+    line-height: 1.75;
     font-size: 1.05rem;
 }
 
-.blog-content ul {
+.blog-content ul:not(.todo-list):not(.contains-task-list):not(.task-list):not(.tk-checklist__list) {
     list-style-type: disc;
+}
+
+.blog-content .todo-list,
+.blog-content .contains-task-list,
+.blog-content .task-list,
+.blog-content .tk-checklist__list,
+.blog-content .tk-checklist {
+    list-style: none !important;
+    list-style-type: none !important;
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+}
+
+.blog-content .todo-list li,
+.blog-content .contains-task-list li,
+.blog-content .task-list li,
+.blog-content .tk-checklist__item {
+    list-style: none !important;
+    list-style-type: none !important;
+    padding-left: 0 !important;
+}
+
+.blog-content .todo-list li::marker,
+.blog-content .todo-list li::before,
+.blog-content .contains-task-list li::marker,
+.blog-content .contains-task-list li::before,
+.blog-content .task-list li::marker,
+.blog-content .task-list li::before,
+.blog-content .tk-checklist__item::marker,
+.blog-content .tk-checklist__item::before {
+    display: none !important;
+    content: "" !important;
 }
 
 .blog-content ol {
     list-style-type: decimal;
 }
 
+/* HTML5 type attribute support for CKEditor 5 */
+.blog-content ol[type="1"] { list-style-type: decimal; }
+.blog-content ol[type="01"] { list-style-type: decimal-leading-zero; }
+.blog-content ol[type="a"] { list-style-type: lower-alpha; }
+.blog-content ol[type="A"] { list-style-type: upper-alpha; }
+.blog-content ol[type="i"] { list-style-type: lower-roman; }
+.blog-content ol[type="I"] { list-style-type: upper-roman; }
+
+/* CKEditor inline style overrides */
+.blog-content ol[style*="decimal-leading-zero"], .blog-content li[style*="decimal-leading-zero"] { list-style-type: decimal-leading-zero !important; }
+.blog-content ol[style*="lower-alpha"], .blog-content li[style*="lower-alpha"] { list-style-type: lower-alpha !important; }
+.blog-content ol[style*="upper-alpha"], .blog-content li[style*="upper-alpha"] { list-style-type: upper-alpha !important; }
+.blog-content ol[style*="lower-roman"], .blog-content li[style*="lower-roman"] { list-style-type: lower-roman !important; }
+.blog-content ol[style*="upper-roman"], .blog-content li[style*="upper-roman"] { list-style-type: upper-roman !important; }
+.blog-content ol[style*="decimal"]:not([style*="decimal-leading-zero"]), .blog-content li[style*="decimal"]:not([style*="decimal-leading-zero"]) { list-style-type: decimal !important; }
+.blog-content ul[style*="circle"], .blog-content li[style*="circle"] { list-style-type: circle !important; }
+.blog-content ul[style*="square"], .blog-content li[style*="square"] { list-style-type: square !important; }
+
+/* Nested lists: clean indentation hierarchy */
+.blog-content ul ul,
+.blog-content ol ol,
+.blog-content ul ol,
+.blog-content ol ul {
+    margin-top: 0.35rem;
+    margin-bottom: 0.35rem;
+    padding-left: 1.75rem;
+}
+
+.blog-content ul ul { list-style-type: circle; }
+.blog-content ul ul ul { list-style-type: square; }
+.blog-content ol ol { list-style-type: lower-alpha; }
+.blog-content ol ol ol { list-style-type: lower-roman; }
+
 .blog-content li {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
+    padding-left: 0.25rem;
 }
 
 .blog-content blockquote {
@@ -1401,57 +1468,7 @@ p iframe {
     margin: 1.5rem 0;
 }
 
-/* ── Todo / Checkbox List ───────────────────────────────────────── */
-.blog-content .todo-list {
-    list-style: none;
-    padding-left: 0;
-    margin-bottom: 1.5rem;
-}
 
-.blog-content .todo-list li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.blog-content .todo-list li label {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    cursor: pointer;
-    color: var(--text-strong);
-    font-size: 1.05rem;
-    line-height: 1.8;
-}
-
-.blog-content .todo-list li label input[type="checkbox"] {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 1.15em;
-    height: 1.15em;
-    margin-top: 0.35em;
-    border: 2px solid rgba(103, 232, 249, 0.4);
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.03);
-    flex-shrink: 0;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.blog-content .todo-list li label input[type="checkbox"]:checked {
-    background: var(--accent-500);
-    border-color: var(--accent-500);
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
-    background-size: 100%;
-    background-position: center;
-    background-repeat: no-repeat;
-}
-
-.blog-content .todo-list li.todo-list__label__description-checked span {
-    text-decoration: line-through;
-    color: var(--text-faint);
-}
 
 /* ── Interactive Micro-Animations ────────────────────────────── */
 

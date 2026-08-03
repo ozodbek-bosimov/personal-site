@@ -424,8 +424,36 @@
     }
   }
 
+  function autoUpgradeNativeTaskLists(scope) {
+    var sel = ".blog-content ul.todo-list, .blog-content ol.todo-list, .blog-content ul.contains-task-list, .blog-content ul.task-list";
+    qsa(scope, sel).forEach(function (list, idx) {
+      var host = list.closest('[data-tk="checklist"]');
+      if (host) return;
+
+      list.classList.add("tk-checklist__list");
+      qsa(list, "li").forEach(function (li) {
+        li.classList.add("tk-checklist__item");
+        qsa(li, 'input[type="checkbox"]').forEach(function (box) {
+          box.removeAttribute("disabled");
+          box.disabled = false;
+        });
+      });
+
+      var container = document.createElement("div");
+      container.className = "tk-block tk-checklist";
+      container.setAttribute("data-tk", "checklist");
+      container.setAttribute("data-tk-id", "auto-todo-" + idx);
+      container.setAttribute("data-persist", "true");
+      if (list.parentNode) {
+        list.parentNode.insertBefore(container, list);
+        container.appendChild(list);
+      }
+    });
+  }
+
   function init(root) {
     var scope = normaliseScope(root);
+    autoUpgradeNativeTaskLists(scope);
     Object.keys(tools).forEach(function (tool) {
       eachBlock(scope, tool, function (el) {
         initOne(el, tool);
@@ -992,10 +1020,10 @@
   }
 
   TK.register("checklist", function (el) {
-    var items = TK.qsa(el, ".tk-checklist__item");
-    var list = TK.qs(el, ".tk-checklist__list");
+    var items = TK.qsa(el, ".tk-checklist__item, li");
+    var list = TK.qs(el, ".tk-checklist__list, ul, ol");
     if (!items.length) throw new Error("no .tk-checklist__item entries");
-    if (!list) throw new Error("missing .tk-checklist__list");
+    if (!list) list = el;
 
     var persist = TK.boolAttr(el, "data-persist", true);
     var saved = persist
@@ -1007,25 +1035,48 @@
     var seen = Object.create(null);
 
     items.forEach(function (item) {
-      // Two items with identical wording would otherwise share a key
-      // and tick together; the suffix keeps them apart deterministically.
+      item.classList.add("tk-checklist__item");
       var base = hashText(item.textContent);
       seen[base] = (seen[base] || 0) + 1;
       var key = seen[base] > 1 ? base + "~" + seen[base] : base;
 
-      var box = TK.make("input", {
-        cls: "tk-checklist__box",
-        act: "check-item",
-        attrs: { type: "checkbox", "data-tk-key": key },
-      });
-      // A <label> wrapping the checkbox associates the two implicitly,
-      // so the whole row is a hit target with no id plumbing.
-      var row = TK.make("label", { cls: "tk-checklist__row" });
-      row.appendChild(box);
-      while (item.firstChild) row.appendChild(item.firstChild);
-      item.appendChild(row);
+      var existingBox = TK.qs(item, 'input[type="checkbox"]');
+      var existingRow = item.querySelector("label");
+      var box;
 
-      if (saved.indexOf(key) !== -1) box.checked = true;
+      if (existingBox) {
+        box = existingBox;
+        box.removeAttribute("disabled");
+        box.disabled = false;
+        box.classList.add("tk-checklist__box");
+        box.setAttribute(ACT, "check-item");
+        box.setAttribute("data-tk-key", key);
+
+        if (existingRow) {
+          existingRow.classList.add("tk-checklist__row");
+          if (!existingRow.contains(box)) {
+            existingRow.insertBefore(box, existingRow.firstChild);
+          }
+        } else {
+          var row = TK.make("label", { cls: "tk-checklist__row" });
+          item.insertBefore(row, existingBox);
+          while (item.firstChild) row.appendChild(item.firstChild);
+        }
+      } else {
+        box = TK.make("input", {
+          cls: "tk-checklist__box",
+          act: "check-item",
+          attrs: { type: "checkbox", "data-tk-key": key },
+        });
+        var row = TK.make("label", { cls: "tk-checklist__row" });
+        row.appendChild(box);
+        while (item.firstChild) row.appendChild(item.firstChild);
+        item.appendChild(row);
+      }
+
+      if (saved.indexOf(key) !== -1) {
+        box.checked = true;
+      }
     });
 
     var head = TK.make("div", {
@@ -1068,6 +1119,14 @@
       syncChecklist(root);
     },
     "change",
+  );
+
+  TK.action(
+    "check-item",
+    function (box, ev, root) {
+      syncChecklist(root);
+    },
+    "click",
   );
 
   TK.action("check-reset", function (btn, ev, root) {
@@ -1874,7 +1933,10 @@
       required: required ? true : null,
     };
     if (type) attrs.type = type;
-    var autocomplete = TK.attr(host, "data-autocomplete", "");
+    /* Non-auth fields default to autocomplete="off" so password managers
+       never mistake a blog form for a login form; authors can opt back in
+       with data-autocomplete. */
+    var autocomplete = TK.attr(host, "data-autocomplete", "off");
     if (autocomplete) attrs.autocomplete = autocomplete;
     return attrs;
   }

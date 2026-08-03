@@ -347,36 +347,6 @@ window.__TK_CATALOG__ = [
     "html": "<div class=\"tk-block tk-checklist\" data-tk=\"checklist\" data-tk-id=\"setup\">\n    <p class=\"tk-checklist__title\">Before you start</p>\n    <ul class=\"tk-list tk-checklist__list\">\n        <li class=\"tk-checklist__item\">Python 3.12 or newer is installed</li>\n        <li class=\"tk-checklist__item\">A virtual environment is created and activated</li>\n        <li class=\"tk-checklist__item\">Dependencies are installed from <code>requirements.txt</code></li>\n        <li class=\"tk-checklist__item\">The <code>.env</code> file is filled in</li>\n    </ul>\n</div>"
   },
   {
-    "tool": "toc",
-    "name": "Table of contents",
-    "group": "Progress",
-    "description": "Builds an accessible navigation list from article headings.",
-    "interactive": true,
-    "a11y": "The runtime creates a named navigation landmark and marks the active section.",
-    "limits": "The block hides itself unless the article has at least two qualifying headings outside toolkit blocks.",
-    "params": [
-      {
-        "name": "data-variant",
-        "values": "inline | sticky",
-        "default": "inline",
-        "description": "Chooses a normal or sticky panel."
-      },
-      {
-        "name": "data-levels",
-        "values": "comma-separated 2,3,4",
-        "default": "2,3",
-        "description": "Heading levels included in the list."
-      },
-      {
-        "name": "data-label",
-        "values": "text",
-        "default": "Table of contents",
-        "description": "Accessible name for the generated navigation landmark."
-      }
-    ],
-    "html": "<div class=\"tk-block tk-toc\" data-tk=\"toc\" data-variant=\"inline\" data-levels=\"2,3\" data-label=\"Table of contents\">\n    <p class=\"tk-toc__title\">On this page</p>\n    <p class=\"tk-toc__fallback\">This article's sections are listed here once the page finishes loading.</p>\n</div>"
-  },
-  {
     "tool": "flashcards",
     "name": "Flashcards",
     "group": "Recall",
