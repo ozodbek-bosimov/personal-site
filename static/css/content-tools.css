@@ -1859,8 +1859,8 @@ ol.todo-list {
 .todo-list__label {
     display: flex !important;
     align-items: center !important;
-    gap: 0.75rem !important;
-    padding: 0.6rem 0.2rem !important;
+    gap: 0.85rem !important;
+    padding: 0.75rem 1rem !important;
     color: var(--tk-fg-soft) !important;
     font-size: var(--tk-fs-sm) !important;
     line-height: 1.55 !important;
@@ -1878,8 +1878,8 @@ ol.todo-list {
 .tk-checklist__box,
 .todo-list input[type="checkbox"] {
     flex: 0 0 auto !important;
-    width: 1.1rem !important;
-    height: 1.1rem !important;
+    width: 1.15rem !important;
+    height: 1.15rem !important;
     margin: 0 !important;
     accent-color: var(--tk-accent-500, #06b6d4) !important;
     cursor: pointer !important;
@@ -1909,7 +1909,7 @@ ol.todo-list {
 }
 
 .tk-checklist[data-variant="todo"] .tk-checklist__row {
-    padding: 0.45rem 0.15rem !important;
+    padding: 0.55rem 0.65rem !important;
     font-size: var(--tk-fs-md) !important;
 }
 
