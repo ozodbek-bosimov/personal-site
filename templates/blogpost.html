@@ -42,6 +42,11 @@
 {% endif %}
 {% if '<pre' in blog.content or '<code' in blog.content %}
 <link
+    rel="preconnect"
+    href="https://cdnjs.cloudflare.com"
+    crossorigin
+/>
+<link
     href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
     rel="stylesheet"
 />
@@ -88,7 +93,7 @@
         <span>
             <i class="bi bi-tag"></i>
             <a href="{% url 'topic' blog.topic %}" class="group">
-                <span class="group-hover:text-cyan-200 bg-left-bottom bg-gradient-to-r from-cyan-300 to-blue-500 bg-[length:0%_2px] bg-no-repeat group-hover:bg-[length:100%_2px] transition-all duration-500 ease-out">{{ blog.topic }}</span>
+                <span class="group-hover:text-cyan-200 bg-left-bottom bg-gradient-to-r from-cyan-300 to-blue-500 bg-[length:0%_2px] bg-no-repeat group-hover:bg-[length:100%_2px] transition-underline">{{ blog.topic }}</span>
             </a>
         </span>
         <i class="bi bi-dot"></i>
@@ -190,7 +195,7 @@
     height: 3px;
     border-radius: 9999px;
     background-color: #94a3b8;
-    transition: all 0.2s ease;
+    transition: width 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     flex-shrink: 0;
 }
 

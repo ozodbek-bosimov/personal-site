@@ -106,7 +106,7 @@
                 </a>
                 {% else %}
                 <a
-                    href="javascript:void(0)"
+                    href="#"
                     role="link"
                     aria-disabled="true"
                     tabindex="-1"
@@ -201,15 +201,13 @@
     </div>
 
 
-</div>
-
-<div class="blog-section text-white overflow-hidden relative z-10">
+</div>    <div class="blog-section text-white overflow-hidden relative z-10">
     <div class="px-8 md:px-20 w-full mt-6 md:mt-8 mb-0 reveal">
-        <h1
+        <h2
             class="text-2xl md:text-3xl font-semibold text-gray-100 tracking-wide mb-4 text-center"
         >
             Latest Posts
-        </h1>
+        </h2>
         <div class="h-px bg-gray-700/50 w-full"></div>
     </div>
     <div class="blogs blog-cards-grid mt-8 mb-8 px-4 reveal-stagger">
@@ -224,6 +222,8 @@
                     class="w-full h-full object-cover"
                     src="{{ blog.effective_thumbnail }}"
                     alt="{{ blog.title }}"
+                    loading="lazy"
+                    decoding="async"
                     draggable="false"
                 />
             </div>

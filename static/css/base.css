@@ -194,6 +194,44 @@ body {
     text-wrap: balance;
 }
 
+/* ── Skip link ──────────────────────────────────────────────────────
+   First focusable element on the page; hidden off-canvas until keyboard
+   focus lands on it, then slides in above the sticky nav. */
+.skip-link {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 100;
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    background: #0f172a;
+    color: #ffffff;
+    border: 1px solid var(--surface-border-hover);
+    box-shadow: var(--surface-shadow);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    /* Compositor-friendly: hide with transform, not layout properties */
+    transform: translateY(calc(-100% - 2rem));
+    transition: transform 0.2s var(--ease-out);
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+/* The mobile menu and topic-underline link animate only transform/
+   opacity/background-size, never layout properties — pin the blanket
+   Tailwind transition-all to the properties actually used. These plain
+   rules win over the utility because base.css loads after dist. */
+.mob-nav {
+    transition-property: transform, opacity;
+}
+
+.transition-underline {
+    transition: background-size 0.5s ease-out, color 0.3s ease-out;
+}
+
 * {
     -webkit-tap-highlight-color: transparent !important;
     /* iOS/Android: kill the default grey/blue flash on every tap.

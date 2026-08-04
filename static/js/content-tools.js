@@ -256,6 +256,15 @@
     return "tk:" + pageKey(el) + ":" + tool + ":" + own;
   }
 
+  function hashText(text) {
+    var normalised = String(text).replace(/\s+/g, " ").trim().toLowerCase();
+    var hash = 5381;
+    for (var i = 0; i < normalised.length; i++) {
+      hash = ((hash << 5) + hash + normalised.charCodeAt(i)) | 0;
+    }
+    return (hash >>> 0).toString(36);
+  }
+
   /* ── base64 (optional obfuscation of quiz answers) ─────────────────
        Not security — it only stops an answer being spotted while scrolling
        the page source. Unicode-safe via percent-encoding round-trip. */
@@ -592,6 +601,7 @@
     store: store,
     blockKey: blockKey,
     pageKey: pageKey,
+    hashText: hashText,
     decodeB64: decodeB64,
     announce: announce,
     copyText: copyText,

@@ -68,8 +68,12 @@ function initApp(root = document) {
   const searchInput = searchModal?.querySelector(".searchInput");
   const searchModalOverlay = searchModal?.querySelector(".searchModal-overlay");
 
+  // Remember which button opened the modal so focus can be returned on close.
+  let searchOpener = null;
+
   function showSearchModal() {
     if (!searchModal) return;
+    searchOpener = document.activeElement;
     searchModal.style.display = "block";
     setTimeout(() => {
       if (searchInput) searchInput.focus();
@@ -80,6 +84,31 @@ function initApp(root = document) {
     if (searchModal) {
       searchModal.style.display = "none";
       if (searchInput) searchInput.value = "";
+    }
+    // Return focus to the element that opened the dialog, if it still exists.
+    if (searchOpener && document.contains(searchOpener)) {
+      searchOpener.focus();
+      searchOpener = null;
+    }
+  }
+
+  // Trap Tab / Shift+Tab inside the open dialog so keyboard focus cannot
+  // escape the aria-modal container (Escape already closes it).
+  function trapSearchFocus(event) {
+    if (!searchModal || searchModal.style.display !== "block") return;
+    if (event.key !== "Tab") return;
+    const focusables = searchModal.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 
@@ -121,6 +150,10 @@ function initApp(root = document) {
         hideSearchModal();
       }
     });
+
+    // Focus containment for the aria-modal dialog (added after Escape so it
+    // never intercepts that key).
+    window.addEventListener("keydown", trapSearchFocus);
   }
 
   // ── Scroll Reveal Animations ──────────────────────────────────────

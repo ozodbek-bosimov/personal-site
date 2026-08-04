@@ -43,6 +43,7 @@
     rel="stylesheet"
     href="{% static 'css/about.css' %}?v={{ STATIC_ASSET_VERSION }}"
 />
+<link rel="preconnect" href="https://unpkg.com" crossorigin />
 <link rel="stylesheet" href="https://unpkg.com/github-calendar@2.3.4/dist/github-calendar-responsive.css"/>
 {% if about_me.bio|needs_content_tools_styles %}
 {% include 'partials/_content_tools_css.html' %}
@@ -282,7 +283,7 @@
                                     {% for line in role.description_lines %}
                                         {% if forloop.counter == 2 and role.description_lines|length > 2 %}
                                         <li>
-                                            {{ line }}<button type="button" class="timeline-inline-more" onclick="toggleBullets('bullets-role-{{ role.id }}')"><span class="timeline-ellipsis">... </span>more</button>
+                                            {{ line }}<button type="button" class="timeline-inline-more" onclick="toggleBullets('bullets-role-{{ role.id }}')"><span class="timeline-ellipsis">… </span>more</button>
                                         </li>
                                         {% elif forloop.last and role.description_lines|length > 2 %}
                                         <li class="hidden-bullet">
@@ -358,7 +359,7 @@
                         {% for line in role.description_lines %}
                             {% if forloop.counter == 2 and role.description_lines|length > 2 %}
                             <li>
-                                {{ line }}<button type="button" class="timeline-inline-more" onclick="toggleBullets('bullets-single-{{ role.id }}')"><span class="timeline-ellipsis">... </span>more</button>
+                                {{ line }}<button type="button" class="timeline-inline-more" onclick="toggleBullets('bullets-single-{{ role.id }}')"><span class="timeline-ellipsis">… </span>more</button>
                             </li>
                             {% elif forloop.last and role.description_lines|length > 2 %}
                             <li class="hidden-bullet">
