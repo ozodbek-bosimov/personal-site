@@ -2084,21 +2084,20 @@ ol.todo-list {
 .tk-quiz,
 .tk-cards {
     padding: 2.5rem;
-    border: 1px solid var(--tk-border);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--tk-radius-lg);
-    background: linear-gradient(145deg, var(--tk-surface), rgba(0, 0, 0, 0.02));
-    box-shadow: var(--tk-shadow);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     transition:
         border-color var(--tk-dur) var(--tk-ease),
-        box-shadow var(--tk-dur) var(--tk-ease);
+        background var(--tk-dur) var(--tk-ease);
 }
 
 .tk-quiz:hover,
 .tk-cards:hover {
-    border-color: var(--tk-border-strong);
-    box-shadow: var(--tk-shadow);
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.035);
 }
 
 .tk-block .tk-quiz__title,
@@ -2390,15 +2389,14 @@ ol.todo-list {
 .tk-form,
 .tk-rating {
     padding: 2.5rem;
-    border: 1px solid var(--tk-border);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--tk-radius-lg);
-    background: linear-gradient(145deg, var(--tk-surface), rgba(0, 0, 0, 0.02));
-    box-shadow: var(--tk-shadow);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     transition:
         border-color var(--tk-dur) var(--tk-ease),
-        box-shadow var(--tk-dur) var(--tk-ease);
+        background var(--tk-dur) var(--tk-ease);
 }
 
 .tk-form:hover {
