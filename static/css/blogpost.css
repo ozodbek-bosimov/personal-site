@@ -135,7 +135,6 @@ pre[class*="language-"] {
     border-radius: 8px !important;
     background: #0d1b2a !important;
     border: 1px solid rgba(103, 232, 249, 0.15) !important;
-    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.35);
     position: relative;
     padding-top: 2.5rem !important;
     overflow: hidden;

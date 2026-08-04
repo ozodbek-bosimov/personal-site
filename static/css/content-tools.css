@@ -2716,3 +2716,8 @@ select.tk-form__control {
         width: 100%;
     }
 }
+
+/* User requested: Remove all shadows from content blocks (Flashcards, cards, codes, etc.) */
+[data-tk], [data-tk] * {
+    box-shadow: none !important;
+}
