@@ -2094,10 +2094,6 @@ ol.todo-list {
         background var(--tk-dur) var(--tk-ease);
 }
 
-.tk-quiz:hover,
-.tk-cards:hover {
-    border-color: rgba(255, 255, 255, 0.12);
-}
 
 .tk-block .tk-quiz__title,
 .tk-block .tk-cards__title {
@@ -2323,9 +2319,6 @@ ol.todo-list {
         background var(--tk-dur) var(--tk-ease);
 }
 
-.tk-cards__card:hover {
-    border-color: rgba(255, 255, 255, 0.12);
-}
 
 .tk-block .tk-cards__front {
     display: flex;
@@ -2397,10 +2390,6 @@ ol.todo-list {
         background var(--tk-dur) var(--tk-ease);
 }
 
-.tk-form:hover {
-    border-color: var(--tk-border-strong);
-    box-shadow: var(--tk-shadow);
-}
 
 .tk-block .tk-form__title,
 .tk-block .tk-rating__prompt {
