@@ -236,13 +236,15 @@
        documented choice for anything worth keeping. */
   function pageKey(el) {
     var host = el && el.closest ? el.closest("[data-tk-page]") : null;
-    var explicit = host ? host.getAttribute("data-tk-page") : null;
-    if (explicit) return explicit;
-    try {
-      return window.location.pathname || "/";
-    } catch (e) {
-      return "/";
+    var raw = host ? host.getAttribute("data-tk-page") : null;
+    if (!raw) {
+      try {
+        raw = window.location.pathname || "/";
+      } catch (e) {
+        raw = "/";
+      }
     }
+    return String(raw).replace(/^\/+|\/+$/g, "");
   }
 
   function blockKey(el, tool) {
@@ -425,10 +427,28 @@
   }
 
   function autoUpgradeNativeTaskLists(scope) {
-    var sel = ".blog-content ul.todo-list, .blog-content ol.todo-list, .blog-content ul.contains-task-list, .blog-content ul.task-list";
-    qsa(scope, sel).forEach(function (list, idx) {
+    var sel = ".blog-content ul, .blog-content ol";
+    // Count only the lists we actually upgrade, so a plain list inserted
+    // above a to-do list cannot shift the storage keys of the ones below it.
+    var todoIndex = 0;
+    qsa(scope, sel).forEach(function (list) {
       var host = list.closest('[data-tk="checklist"]');
       if (host) return;
+
+      var hasCheckboxes = list.querySelector('input[type="checkbox"]') !== null;
+      var hasTaskListClass =
+        list.classList.contains("todo-list") ||
+        list.classList.contains("contains-task-list") ||
+        list.classList.contains("task-list");
+      var hasUnicodeSquare = Array.prototype.slice
+        .call(list.querySelectorAll("li"))
+        .some(function (li) {
+          return /^[\s\u25a0\u25a1\u2610\u2611\u2612]|\s*\[[ xX]?\]/.test(
+            li.textContent || "",
+          );
+        });
+
+      if (!hasCheckboxes && !hasTaskListClass && !hasUnicodeSquare) return;
 
       list.classList.add("tk-checklist__list");
       qsa(list, "li").forEach(function (li) {
@@ -439,11 +459,28 @@
         });
       });
 
+      // An author-supplied data-tk-id on the source <ul> wins, so the
+      // storage key survives reordering. Otherwise fall back to the ordinal
+      // among upgraded to-do lists only.
+      var ownId = list.getAttribute("data-tk-id");
+      var itemsText = Array.prototype.slice
+        .call(list.querySelectorAll("li"))
+        .map(function (li) {
+          return (li.textContent || "").trim();
+        })
+        .join("|");
+      var stableId = ownId || "auto-todo-" + hashText(itemsText);
+
       var container = document.createElement("div");
       container.className = "tk-block tk-checklist";
       container.setAttribute("data-tk", "checklist");
-      container.setAttribute("data-tk-id", "auto-todo-" + idx);
+      container.setAttribute("data-tk-id", stableId);
       container.setAttribute("data-persist", "true");
+      // Native to-do lists are upgraded to the checklist machinery but stay
+      // visually distinct: no card, no progress bar, no clear button — just
+      // tickable items whose state persists in localStorage.
+      container.setAttribute("data-variant", "todo");
+      todoIndex += 1;
       if (list.parentNode) {
         list.parentNode.insertBefore(container, list);
         container.appendChild(list);
@@ -968,9 +1005,12 @@
   }
 
   function checklistBoxes(root) {
-    return TK.qsa(root, ".tk-checklist__box").filter(function (box) {
-      return box.closest('[data-tk="checklist"]') === root;
-    });
+    return TK.qsa(root, ".tk-checklist__box, input[type='checkbox']").filter(
+      function (box) {
+        var host = box.closest('[data-tk="checklist"]');
+        return host === root || (!host && box.closest(".tk-checklist") === root);
+      },
+    );
   }
 
   /* Recompute everything the checklist shows from the checkboxes alone —
@@ -989,7 +1029,14 @@
     );
 
     boxes.forEach(function (box) {
-      var item = box.closest(".tk-checklist__item");
+      if (box.checked) {
+        box.defaultChecked = true;
+        box.setAttribute("checked", "checked");
+      } else {
+        box.defaultChecked = false;
+        box.removeAttribute("checked");
+      }
+      var item = box.closest(".tk-checklist__item") || box.closest("li");
       if (item) item.toggleAttribute("data-done", box.checked);
     });
 
@@ -1036,6 +1083,19 @@
 
     items.forEach(function (item) {
       item.classList.add("tk-checklist__item");
+
+      // Strip leading bullet/square symbols (■, □, ☐, ☑, [ ], [x], •) from text nodes
+      TK.qsa(item, "*").concat([item]).forEach(function (node) {
+        for (var child = node.firstChild; child; child = child.nextSibling) {
+          if (child.nodeType === 3) {
+            child.nodeValue = child.nodeValue.replace(
+              /^[\s\u25a0\u25a1\u2610\u2611\u2612\u2022\u25cf\u25cb\u25e6\-+*]+|^\s*\[[ xX]?\]\s*/g,
+              "",
+            );
+          }
+        }
+      });
+
       var base = hashText(item.textContent);
       seen[base] = (seen[base] || 0) + 1;
       var key = seen[base] > 1 ? base + "~" + seen[base] : base;
@@ -1049,13 +1109,14 @@
         box.removeAttribute("disabled");
         box.disabled = false;
         box.classList.add("tk-checklist__box");
-        box.setAttribute(ACT, "check-item");
+        box.setAttribute(TK.ACT, "check-item");
         box.setAttribute("data-tk-key", key);
 
-        if (existingRow) {
-          existingRow.classList.add("tk-checklist__row");
-          if (!existingRow.contains(box)) {
-            existingRow.insertBefore(box, existingRow.firstChild);
+        var existingLabel = box.closest("label") || item.querySelector("label");
+        if (existingLabel) {
+          existingLabel.classList.add("tk-checklist__row");
+          if (!existingLabel.contains(box)) {
+            existingLabel.insertBefore(box, existingLabel.firstChild);
           }
         } else {
           var row = TK.make("label", { cls: "tk-checklist__row" });
@@ -1074,42 +1135,60 @@
         item.appendChild(row);
       }
 
-      if (saved.indexOf(key) !== -1) {
+      var isSaved = saved.indexOf(key) !== -1;
+      if (isSaved) {
         box.checked = true;
+        box.defaultChecked = true;
+        box.setAttribute("checked", "checked");
+      } else {
+        box.checked = false;
+        box.defaultChecked = false;
+        box.removeAttribute("checked");
       }
+
+      box.addEventListener("change", function () {
+        syncChecklist(el);
+      });
     });
 
-    var head = TK.make("div", {
-      cls: "tk-checklist__head",
-      kids: [
-        TK.make("span", {
-          cls: "tk-checklist__count",
-          attrs: { role: "status", "aria-live": "polite" },
-        }),
-        TK.make("button", {
-          cls: "tk-ctl tk-checklist__reset",
-          act: "check-reset",
-          text: TK.attr(el, "data-reset-label", "Clear"),
-          attrs: { type: "button" },
-        }),
-      ],
-    });
+    // A native CKEditor To-do List (auto-upgraded with data-variant="todo")
+    // keeps the tickable, persisted items but skips the widget chrome — no
+    // counter, no clear button, no progress bar. It should read as a plain
+    // task list, not a checklist card.
+    var isTodo = TK.attr(el, "data-variant", "") === "todo";
+    if (!isTodo) {
+      var head = TK.make("div", {
+        cls: "tk-checklist__head",
+        kids: [
+          TK.make("span", {
+            cls: "tk-checklist__count",
+            attrs: { role: "status", "aria-live": "polite" },
+          }),
+          TK.make("button", {
+            cls: "tk-ctl tk-checklist__reset",
+            act: "check-reset",
+            text: TK.attr(el, "data-reset-label", "Clear"),
+            attrs: { type: "button" },
+          }),
+        ],
+      });
 
-    var bar = TK.make("div", {
-      cls: "tk-checklist__bar",
-      attrs: {
-        role: "progressbar",
-        "aria-label":
-          (title ? title.textContent.trim() + " — " : "") + "progress",
-        "aria-valuemin": "0",
-        "aria-valuemax": String(items.length),
-        "aria-valuenow": "0",
-      },
-      kids: [TK.make("div", { cls: "tk-checklist__fill" })],
-    });
+      var bar = TK.make("div", {
+        cls: "tk-checklist__bar",
+        attrs: {
+          role: "progressbar",
+          "aria-label":
+            (title ? title.textContent.trim() + " — " : "") + "progress",
+          "aria-valuemin": "0",
+          "aria-valuemax": String(items.length),
+          "aria-valuenow": "0",
+        },
+        kids: [TK.make("div", { cls: "tk-checklist__fill" })],
+      });
 
-    el.insertBefore(head, list);
-    el.insertBefore(bar, list);
+      el.insertBefore(head, list);
+      el.insertBefore(bar, list);
+    }
     syncChecklist(el);
   });
 
@@ -1121,21 +1200,28 @@
     "change",
   );
 
-  TK.action(
-    "check-item",
-    function (box, ev, root) {
-      syncChecklist(root);
-    },
-    "click",
-  );
-
   TK.action("check-reset", function (btn, ev, root) {
     checklistBoxes(root).forEach(function (box) {
       box.checked = false;
+      box.defaultChecked = false;
+      box.removeAttribute("checked");
     });
     TK.store.remove(TK.blockKey(root, "checklist"));
     syncChecklist(root);
     TK.announce("Checklist cleared");
+  });
+
+  document.addEventListener("change", function (ev) {
+    var target = ev.target;
+    if (!target || target.type !== "checkbox") return;
+    var host =
+      target.closest('[data-tk="checklist"]') ||
+      target.closest(".tk-checklist") ||
+      target.closest(".todo-list");
+    if (host) {
+      var root = host.closest('[data-tk="checklist"]') || host;
+      syncChecklist(root);
+    }
   });
 
   /* ── table of contents ──────────────────────────────────────────────
@@ -1285,6 +1371,54 @@
     });
   }
 
+  function saveQuizAnswers(root) {
+    if (!TK.boolAttr(root, "data-persist", true)) return;
+    var key = TK.blockKey(root, "quiz") + ":answers";
+    var data = [];
+    questions(root).forEach(function (q) {
+      var state = q.getAttribute("data-state") || "";
+      var picked = [];
+      options(q).forEach(function (li, idx) {
+        var input = TK.qs(li, ".tk-quiz__input");
+        if (input && input.checked) picked.push(idx);
+      });
+      data.push({ state: state, picked: picked });
+    });
+    TK.store.setJSON(key, data);
+  }
+
+  function restoreQuizAnswers(root) {
+    if (!TK.boolAttr(root, "data-persist", true)) return;
+    var key = TK.blockKey(root, "quiz") + ":answers";
+    var data = TK.store.getJSON(key, null);
+    if (!Array.isArray(data)) return;
+
+    var qList = questions(root);
+    data.forEach(function (item, qi) {
+      var q = qList[qi];
+      if (!q || !item) return;
+
+      var opts = options(q);
+      if (Array.isArray(item.picked)) {
+        item.picked.forEach(function (idx) {
+          var li = opts[idx];
+          if (li) {
+            var input = TK.qs(li, ".tk-quiz__input");
+            if (input) {
+              input.checked = true;
+              input.defaultChecked = true;
+              input.setAttribute("checked", "checked");
+            }
+          }
+        });
+      }
+
+      if (item.state) {
+        judge(q);
+      }
+    });
+  }
+
   /* ── quiz ───────────────────────────────────────────────────────────
        data-tk="quiz"
 
@@ -1417,6 +1551,8 @@
       bestEl.textContent = best >= 0 ? "Best " + best + "%" : "";
       bestEl.hidden = best < 0;
     }
+
+    saveQuizAnswers(root);
 
     // One notification per completed run; cleared again by Try again.
     if (done && !root.hasAttribute("data-tk-reported")) {
@@ -1556,6 +1692,7 @@
     });
     el.appendChild(foot);
 
+    restoreQuizAnswers(el);
     showQuestion(el, 0);
     syncQuiz(el);
   });
@@ -1594,6 +1731,7 @@
   });
 
   TK.action("quiz-retry", function (btn, ev, root) {
+    TK.store.remove(TK.blockKey(root, "quiz") + ":answers");
     questions(root).forEach(function (question) {
       question.removeAttribute("data-state");
       options(question).forEach(function (li) {
@@ -1601,6 +1739,8 @@
         var input = TK.qs(li, ".tk-quiz__input");
         if (input) {
           input.checked = false;
+          input.defaultChecked = false;
+          input.removeAttribute("checked");
           input.disabled = false;
         }
       });
@@ -2129,7 +2269,7 @@
     var form = TK.make("form", {
       cls: "tk-form__form",
       act: "gform-submit",
-      attrs: { novalidate: true },
+      attrs: { novalidate: true, onsubmit: "return false;" },
     });
     hosts.forEach(function (host, index) {
       renderField(host, index);
@@ -2158,13 +2298,13 @@
         ],
       }),
     );
-    form.appendChild(
-      TK.make("button", {
-        cls: "tk-ctl tk-form__submit",
-        text: TK.attr(el, "data-submit-label", "Send"),
-        attrs: { type: "submit" },
-      }),
-    );
+    var submitBtn = TK.make("button", {
+      cls: "tk-ctl tk-form__submit",
+      text: TK.attr(el, "data-submit-label", "Send"),
+      attrs: { type: "submit" },
+    });
+    form.appendChild(submitBtn);
+
     form.appendChild(
       TK.make("p", {
         cls: "tk-form__status",
@@ -2172,6 +2312,18 @@
       }),
     );
     el.appendChild(form);
+
+    var submittedKey = TK.blockKey(el, "gform") + ":submitted";
+    if (TK.store.get(submittedKey) === "1") {
+      TK.qsa(el, "input, select, textarea, button").forEach(function (control) {
+        control.disabled = true;
+      });
+      setStatus(
+        el,
+        "success",
+        TK.attr(el, "data-success", "Thanks — your feedback was sent."),
+      );
+    }
   }
 
   TK.register("gform", initialiseGform);
@@ -2227,11 +2379,16 @@
       postGoogle(root, formParams(root))
         .then(function () {
           markSent(root, "gform");
-          form.reset();
+          TK.store.set(TK.blockKey(root, "gform") + ":submitted", "1");
+          TK.qsa(root, "input, select, textarea, button").forEach(
+            function (control) {
+              control.disabled = true;
+            },
+          );
           setStatus(
             root,
             "success",
-            TK.attr(root, "data-success", "Thanks — sent."),
+            TK.attr(root, "data-success", "Thanks — your feedback was sent."),
           );
         })
         .catch(function (err) {
@@ -2239,14 +2396,12 @@
             "Google Form submission failed: " + (err && err.message),
             root,
           );
+          if (submit) submit.disabled = false;
           setStatus(
             root,
             "error",
             TK.attr(root, "data-error", "Could not send. Please try again."),
           );
-        })
-        .then(function () {
-          if (submit) submit.disabled = false;
         });
     },
     "submit",

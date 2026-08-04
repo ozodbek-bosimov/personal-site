@@ -34,7 +34,7 @@ if not SECRET_KEY:
         )
 
 # Asset Versioning
-STATIC_ASSET_VERSION = os.getenv("APP_STATIC_ASSET_VERSION", "20260804_14")
+STATIC_ASSET_VERSION = os.getenv("APP_STATIC_ASSET_VERSION", "20260804_24")
 
 # Allowed Hosts & CSRF
 _allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS")

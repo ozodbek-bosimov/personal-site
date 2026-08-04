@@ -37,7 +37,7 @@
     rel="stylesheet"
     href="{% static 'css/blogpost.css' %}?v={{ STATIC_ASSET_VERSION }}"
 />
-{% if blog.content and 'data-tk' in blog.content %}
+{% if blog.content|needs_content_tools_styles %}
 {% include 'partials/_content_tools_css.html' %}
 {% endif %}
 {% if '<pre' in blog.content or '<code' in blog.content %}

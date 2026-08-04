@@ -381,9 +381,16 @@ A tickable list that remembers where the reader got to, with a progress bar and 
 | `data-reset-label` | text | Clear | Label of the button that unticks everything. |
 | `title paragraph` | text | — | Optional p.tk-checklist__title. Also used as the accessible name of the progress bar. |
 
-**Accessibility:** Real checkboxes wrapped in labels, so the whole row is clickable and keyboard behaviour is the browser's. The counter is a polite live region and the bar is a progressbar with aria-valuetext.
+**Accessibility:** Real checkboxes wrapped in labels, so the whole row is clickable and keyboard behaviour is the browser's. The counter is a polite live region and the bar is a progressbar with aria-valuetext.**Limits:** Progress lives in this browser's localStorage only — it does not
+follow the reader to another device, and private browsing loses it on close.
+Item state is keyed on the item's text, so rewording an item resets that one
+line.
 
-**Limits:** Progress lives in this browser's localStorage only — it does not follow the reader to another device, and private browsing loses it on close. Item state is keyed on the item's text, so rewording an item resets that one line.
+**Native CKEditor To-do Lists:** a plain To-do List pasted from the editor is
+auto-upgraded into a lightweight checklist (`data-variant="todo"`): the
+checkboxes become tickable and their state persists, but the card, progress
+bar, counter and Clear button are omitted so it reads as a plain task list.
+Give it a `data-tk-id` in the source to keep its storage key stable.
 
 ---
 

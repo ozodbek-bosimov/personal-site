@@ -1780,6 +1780,7 @@
     font-family: var(--tk-mono);
     font-size: var(--tk-fs-xs);
     letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
 }
 
 .tk-checklist__reset {
@@ -1891,6 +1892,29 @@ ol.todo-list {
     color: var(--tk-fg-faint) !important;
     text-decoration: line-through !important;
     text-decoration-color: var(--tk-border-strong) !important;
+}
+
+/* ── native to-do list variant ──────────────────────────────────────────
+   data-variant="todo" is set by the runtime when it upgrades a CKEditor
+   To-do List into the checklist machinery. It keeps the tickable,
+   persisted items but drops the widget chrome (no head, no progress bar),
+   so it reads as a plain task list rather than a checklist card.        */
+
+.tk-checklist[data-variant="todo"] {
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    margin: 1.25rem 0 !important;
+}
+
+.tk-checklist[data-variant="todo"] .tk-checklist__row {
+    padding: 0.45rem 0.15rem !important;
+    font-size: var(--tk-fs-md) !important;
+}
+
+.tk-checklist[data-variant="todo"] .tk-checklist__item + .tk-checklist__item {
+    border-top: none !important;
 }
 
 /* ── table of contents ──────────────────────────────────────────────────
@@ -2205,6 +2229,7 @@ ol.todo-list {
     font-family: var(--tk-mono);
     font-size: var(--tk-fs-sm);
     text-align: center;
+    font-variant-numeric: tabular-nums;
 }
 
 .tk-quiz__score {
@@ -2212,6 +2237,7 @@ ol.todo-list {
     font-family: var(--tk-mono);
     font-size: var(--tk-fs-sm);
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
 }
 
 .tk-quiz__best {

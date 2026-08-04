@@ -40,6 +40,17 @@ _INTERACTIVE_TOOL_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Matches a native (non-toolkit) task/todo list — CKEditor 5's To-do List
+# (`<ul class="todo-list">` with checkbox inputs), GitHub-flavoured markdown
+# task lists, or a bare Unicode/markdown checkbox square. These carry no
+# `data-tk` marker, but the runtime upgrades them into persistable
+# tk-checklist blocks, so a page that contains one needs the stylesheet and
+# the runtime too. Mirrors the detection in autoUpgradeNativeTaskLists.
+_NATIVE_TODO_RE = re.compile(
+    r'''class\s*=\s*["'][^"']*\b(?:todo-list|contains-task-list|task-list)\b|type\s*=\s*["']checkbox["']|[\u25a0\u25a1\u2610\u2611\u2612]|\s*\[[ xX]?\]''',
+    re.IGNORECASE,
+)
+
 
 @register.filter(name="lazy_iframes")
 def lazy_iframes(content):
@@ -78,7 +89,26 @@ def needs_content_tools_runtime(content):
     """Return whether stored rich text needs the interactive toolkit runtime.
 
     This intentionally recognises legacy ``feedback`` blocks alongside the
-    current snippet names, so existing posts keep working while their markup
-    is migrated to the canonical Google Form bridge.
+    current snippet names, and native CKEditor to-do lists (which have no
+    data-tk marker but are upgraded into persistable checklists at runtime),
+    so existing posts keep working while their markup is migrated.
     """
-    return bool(content and _INTERACTIVE_TOOL_RE.search(content))
+    return bool(
+        content
+        and (
+            _INTERACTIVE_TOOL_RE.search(content)
+            or _NATIVE_TODO_RE.search(content)
+        )
+    )
+
+
+@register.filter(name="needs_content_tools_styles")
+def needs_content_tools_styles(content):
+    """Return whether stored rich text needs the content toolkit stylesheet.
+
+    Broader than the runtime check: any data-tk block — including purely
+    presentational ones such as callouts and quotes — needs the stylesheet,
+    and so does a native to-do list, which the runtime turns into a styled,
+    persistable checklist.
+    """
+    return bool(content and ("data-tk" in content or _NATIVE_TODO_RE.search(content)))

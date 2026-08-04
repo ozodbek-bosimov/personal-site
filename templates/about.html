@@ -44,7 +44,7 @@
     href="{% static 'css/about.css' %}?v={{ STATIC_ASSET_VERSION }}"
 />
 <link rel="stylesheet" href="https://unpkg.com/github-calendar@2.3.4/dist/github-calendar-responsive.css"/>
-{% if about_me.bio and 'data-tk' in about_me.bio %}
+{% if about_me.bio|needs_content_tools_styles %}
 {% include 'partials/_content_tools_css.html' %}
 {% endif %}
 {% endblock meta %} {% block content %}
