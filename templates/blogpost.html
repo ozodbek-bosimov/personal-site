@@ -181,8 +181,8 @@
     align-items: center;
     justify-content: flex-end;
     width: 100%;
-    height: 1.5rem;
-    margin: 2px 0;
+    height: 1.25rem;
+    margin: 1px 0;
     padding: 0 4px;
     cursor: pointer;
     text-decoration: none;
@@ -234,13 +234,13 @@
 /* TOC Hover Styles */
 #toc-sidebar-container:hover #toc-box {
     width: 310px;
-    background-color: rgba(15, 23, 42, 0.96); /* slate-900/96 */
+    background-color: rgba(31, 41, 55, 0.8); /* gray-800/80 */
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     padding: 0.75rem 0.6rem;
     border-radius: 0.85rem;
-    border-color: rgba(51, 65, 85, 0.8); /* slate-700 */
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+    border-color: rgba(55, 65, 81, 0.5); /* gray-700/50 */
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.6);
     scrollbar-width: thin;
     scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
 }
@@ -265,11 +265,11 @@
 /* TOC Item Active/Hover Styles */
 .toc-item:not(.is-active):hover .toc-text {
     color: #f8fafc !important;
-    background-color: rgba(255, 255, 255, 0.08) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
 }
 .toc-item.is-active .toc-text {
     color: var(--accent-300, #67e8f9) !important;
-    background-color: rgba(6, 182, 212, 0.12) !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
 }
 </style>
 <aside id="toc-sidebar-container" style="display: none;">

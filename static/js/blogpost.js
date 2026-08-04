@@ -277,7 +277,7 @@
           const link = document.createElement("a");
           link.href = "#" + heading.id;
           // Item container - compact height so long TOC lists fit cleanly on any viewport
-          link.className = "toc-item group/item flex items-center justify-end w-full cursor-pointer transition-colors h-6 shrink-0 my-0.5 px-1";
+          link.className = "toc-item group/item flex items-center justify-end w-full cursor-pointer transition-colors shrink-0 px-1";
           
           // The Dash (visible when not hovered, crisp slate-400 tint)
           const dash = document.createElement("span");
