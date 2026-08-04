@@ -1159,7 +1159,7 @@ span a.tapped,
     font-size: 1.05rem;
 }
 
-.blog-content ul:not(.todo-list):not(.contains-task-list):not(.task-list):not(.tk-checklist__list) {
+.blog-content ul:not(.todo-list):not(.contains-task-list):not(.task-list):not(.tk-checklist__list):not(.tk-quiz__options) {
     list-style-type: disc;
 }
 
@@ -1167,7 +1167,11 @@ span a.tapped,
 .blog-content .contains-task-list,
 .blog-content .task-list,
 .blog-content .tk-checklist__list,
-.blog-content .tk-checklist {
+.blog-content .tk-checklist,
+.blog-content .tk-quiz,
+.blog-content .tk-quiz__options,
+.blog-content .tk-quiz ol,
+.blog-content .tk-quiz ul {
     list-style: none !important;
     list-style-type: none !important;
     padding-left: 0 !important;
@@ -1177,7 +1181,9 @@ span a.tapped,
 .blog-content .todo-list li,
 .blog-content .contains-task-list li,
 .blog-content .task-list li,
-.blog-content .tk-checklist__item {
+.blog-content .tk-checklist__item,
+.blog-content .tk-quiz__option,
+.blog-content .tk-quiz li {
     list-style: none !important;
     list-style-type: none !important;
     padding-left: 0 !important;
@@ -1190,7 +1196,11 @@ span a.tapped,
 .blog-content .task-list li::marker,
 .blog-content .task-list li::before,
 .blog-content .tk-checklist__item::marker,
-.blog-content .tk-checklist__item::before {
+.blog-content .tk-checklist__item::before,
+.blog-content .tk-quiz__option::marker,
+.blog-content .tk-quiz__option::before,
+.blog-content .tk-quiz li::marker,
+.blog-content .tk-quiz li::before {
     display: none !important;
     content: "" !important;
 }
