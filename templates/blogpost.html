@@ -232,7 +232,7 @@
 }
 
 /* TOC Hover Styles */
-#toc-sidebar-container:hover #toc-box {
+#toc-sidebar-container.is-hovered #toc-box {
     width: 310px;
     background-color: rgba(31, 41, 55, 0.8); /* gray-800/80 */
     backdrop-filter: blur(24px);
@@ -240,24 +240,23 @@
     padding: 0.75rem 0.6rem;
     border-radius: 0.85rem;
     border-color: rgba(55, 65, 81, 0.5); /* gray-700/50 */
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.6);
     scrollbar-width: thin;
     scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
 }
-#toc-sidebar-container:hover #toc-box::-webkit-scrollbar {
+#toc-sidebar-container.is-hovered #toc-box::-webkit-scrollbar {
     display: block;
     width: 4px;
 }
-#toc-sidebar-container:hover #toc-box::-webkit-scrollbar-thumb {
+#toc-sidebar-container.is-hovered #toc-box::-webkit-scrollbar-thumb {
     background: rgba(148, 163, 184, 0.3);
     border-radius: 4px;
 }
 
 /* Show text, hide dash on hover */
-#toc-sidebar-container:hover .toc-dash {
+#toc-sidebar-container.is-hovered .toc-dash {
     display: none !important;
 }
-#toc-sidebar-container:hover .toc-text {
+#toc-sidebar-container.is-hovered .toc-text {
     display: block !important;
     opacity: 1 !important;
 }

@@ -266,6 +266,21 @@
       
       if (headings.length >= 1) {
         tocContainer.style.display = "block";
+        
+        let hoverTimeout;
+        tocContainer.addEventListener("mouseenter", () => {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = setTimeout(() => {
+                tocContainer.classList.add("is-hovered");
+            }, 180); // small delay to prevent accidental flashing
+        });
+        tocContainer.addEventListener("mouseleave", () => {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = setTimeout(() => {
+                tocContainer.classList.remove("is-hovered");
+            }, 180); 
+        });
+
         tocNav.innerHTML = "";
         
         let activeLink = null;
