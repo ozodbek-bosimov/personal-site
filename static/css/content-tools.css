@@ -2105,9 +2105,9 @@ ol.todo-list {
 
 .tk-quiz__row {
     display: flex;
-    align-items: flex-start;
-    gap: 0.6rem;
-    padding: 0.85rem 1rem;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.95rem 1.25rem;
     cursor: pointer;
     touch-action: manipulation;
 }
@@ -2121,9 +2121,9 @@ ol.todo-list {
 
 .tk-quiz__input {
     flex: 0 0 auto;
-    width: 1.1rem;
-    height: 1.1rem;
-    margin: 0.15rem 0 0;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin: 0;
     accent-color: var(--tk-accent-500);
     cursor: pointer;
 }
@@ -2150,8 +2150,9 @@ ol.todo-list {
 
 .tk-quiz__option[data-mark]::after {
     position: absolute;
-    top: 0.9rem;
-    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 1.25rem;
     color: var(--tk-success);
     font-weight: 800;
     content: "\2713";
@@ -2197,13 +2198,15 @@ ol.todo-list {
 }
 
 .tk-block .tk-quiz__explain {
-    margin-top: 1rem;
-    padding: 1rem;
-    border-left: 3px solid var(--tk-accent-400);
-    border-radius: 0 var(--tk-radius-sm) var(--tk-radius-sm) 0;
-    background: var(--tk-accent-soft);
+    margin-top: 1.25rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--tk-border-strong);
+    border-left: 4px solid var(--tk-accent-500, #06b6d4) !important;
+    border-radius: var(--tk-radius-sm);
+    background: rgba(6, 182, 212, 0.08) !important;
     color: var(--tk-fg-soft);
     font-size: var(--tk-fs-sm);
+    line-height: 1.6;
 }
 
 .tk-quiz__bar,
