@@ -28,23 +28,29 @@ function initApp(root = document) {
   // Mobile Menu
   const toggleButton = root.querySelector(".nav-btn");
   const navbarContent = root.querySelector(".mob-nav");
+  const navOverlay = root.querySelector("#mob-nav-overlay") || document.querySelector("#mob-nav-overlay");
 
   if (toggleButton && navbarContent && !toggleButton.dataset.initialized) {
     toggleButton.dataset.initialized = "true";
+
+    function closeMobileMenu() {
+      navbarContent.classList.add("translate-x-full", "opacity-0");
+      if (navOverlay) navOverlay.classList.add("opacity-0", "pointer-events-none");
+    }
+
     function toggleMobileMenu() {
       if (navbarContent.classList.contains("translate-x-full")) {
         navbarContent.classList.remove("translate-x-full", "opacity-0");
+        if (navOverlay) navOverlay.classList.remove("opacity-0", "pointer-events-none");
       } else {
-        navbarContent.classList.add("translate-x-full", "opacity-0");
+        closeMobileMenu();
       }
     }
 
     toggleButton.addEventListener("click", toggleMobileMenu);
 
     root.querySelectorAll(".mob-nav a").forEach((link) => {
-      link.addEventListener("click", () => {
-        navbarContent.classList.add("translate-x-full", "opacity-0");
-      });
+      link.addEventListener("click", closeMobileMenu);
     });
 
     document.addEventListener("click", (event) => {
@@ -52,13 +58,11 @@ function initApp(root = document) {
         !navbarContent.contains(event.target) &&
         !toggleButton.contains(event.target)
       ) {
-        navbarContent.classList.add("translate-x-full", "opacity-0");
+        closeMobileMenu();
       }
     });
 
-    window.addEventListener("scroll", () => {
-      navbarContent.classList.add("translate-x-full", "opacity-0");
-    }, { passive: true });
+    window.addEventListener("scroll", closeMobileMenu, { passive: true });
   }
 
   // Search Modal
