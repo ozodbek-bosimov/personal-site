@@ -2315,17 +2315,19 @@ ol.todo-list {
 .tk-cards__card {
     min-height: 14rem;
     padding: 2rem;
-    border: 1px solid var(--tk-border-strong);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--tk-radius-lg);
-    background:
-        linear-gradient(135deg, var(--tk-accent-soft), transparent 60%),
-        var(--tk-surface-2);
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     transition:
-        border-color var(--tk-dur) var(--tk-ease);
+        border-color var(--tk-dur) var(--tk-ease),
+        background var(--tk-dur) var(--tk-ease);
 }
 
 .tk-cards__card:hover {
-    border-color: var(--tk-accent-400);
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.035);
 }
 
 .tk-block .tk-cards__front {
