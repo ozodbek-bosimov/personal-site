@@ -2097,7 +2097,6 @@ ol.todo-list {
 .tk-quiz:hover,
 .tk-cards:hover {
     border-color: rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.035);
 }
 
 .tk-block .tk-quiz__title,
@@ -2326,7 +2325,6 @@ ol.todo-list {
 
 .tk-cards__card:hover {
     border-color: rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.035);
 }
 
 .tk-block .tk-cards__front {
