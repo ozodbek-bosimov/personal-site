@@ -1841,9 +1841,24 @@ ol.todo-list {
     list-style-type: none !important;
 }
 
+.tk-checklist__list,
+.todo-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.65rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.tk-checklist__item,
+.todo-list li {
+    margin: 0 !important;
+    border: none !important;
+}
+
 .tk-checklist__item + .tk-checklist__item,
 .todo-list li + li {
-    border-top: 1px solid var(--tk-border) !important;
+    border-top: none !important;
 }
 
 .tk-checklist__item::marker,
@@ -1859,27 +1874,37 @@ ol.todo-list {
 .todo-list__label {
     display: flex !important;
     align-items: center !important;
-    gap: 0.85rem !important;
-    padding: 0.75rem 1rem !important;
+    gap: 1rem !important;
+    padding: 0.9rem 1.35rem !important;
+    border: 1px solid var(--tk-border-strong) !important;
+    border-radius: var(--tk-radius-sm) !important;
+    background: var(--tk-surface-sunken) !important;
     color: var(--tk-fg-soft) !important;
-    font-size: var(--tk-fs-sm) !important;
+    font-size: var(--tk-fs-md) !important;
     line-height: 1.55 !important;
     cursor: pointer !important;
     pointer-events: auto !important;
     touch-action: manipulation;
-    transition: color var(--tk-dur) var(--tk-ease);
+    transition:
+        border-color var(--tk-dur) var(--tk-ease),
+        background var(--tk-dur) var(--tk-ease),
+        color var(--tk-dur) var(--tk-ease),
+        box-shadow var(--tk-dur) var(--tk-ease) !important;
 }
 
 .tk-checklist__row:hover,
 .todo-list__label:hover {
+    border-color: var(--tk-accent-400) !important;
+    background: var(--tk-surface) !important;
     color: var(--tk-fg-strong) !important;
+    box-shadow: 0 0 0 3px var(--tk-accent-soft) !important;
 }
 
 .tk-checklist__box,
 .todo-list input[type="checkbox"] {
     flex: 0 0 auto !important;
-    width: 1.15rem !important;
-    height: 1.15rem !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
     margin: 0 !important;
     accent-color: var(--tk-accent-500, #06b6d4) !important;
     cursor: pointer !important;
@@ -1892,6 +1917,8 @@ ol.todo-list {
     color: var(--tk-fg-faint) !important;
     text-decoration: line-through !important;
     text-decoration-color: var(--tk-border-strong) !important;
+    background: var(--tk-surface-sunken) !important;
+    opacity: 0.8;
 }
 
 /* ── native to-do list variant ──────────────────────────────────────────
@@ -1908,9 +1935,29 @@ ol.todo-list {
     margin: 1.25rem 0 !important;
 }
 
+/* Rows must shed the base .tk-checklist__row card chrome too — the earlier
+   fix only reset the container, leaving each to-do item as a bordered,
+   backgrounded mini-card with the text crammed against the checkbox. */
 .tk-checklist[data-variant="todo"] .tk-checklist__row {
-    padding: 0.55rem 0.65rem !important;
+    padding: 0.5rem 0.25rem !important;
     font-size: var(--tk-fs-md) !important;
+    gap: 0.75rem !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.tk-checklist[data-variant="todo"] .tk-checklist__row:hover {
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--tk-fg-strong) !important;
+}
+
+.tk-checklist[data-variant="todo"] .tk-checklist__item[data-done] .tk-checklist__row {
+    background: transparent !important;
+    opacity: 0.75;
 }
 
 .tk-checklist[data-variant="todo"] .tk-checklist__item + .tk-checklist__item {
@@ -2106,8 +2153,8 @@ ol.todo-list {
 .tk-quiz__row {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
-    padding: 0.95rem 1.25rem;
+    gap: 1rem;
+    padding: 0.9rem 1.35rem;
     cursor: pointer;
     touch-action: manipulation;
 }
@@ -2121,8 +2168,8 @@ ol.todo-list {
 
 .tk-quiz__input {
     flex: 0 0 auto;
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 1.25rem;
+    height: 1.25rem;
     margin: 0;
     accent-color: var(--tk-accent-500);
     cursor: pointer;

@@ -2279,7 +2279,7 @@
     var form = TK.make("form", {
       cls: "tk-form__form",
       act: "gform-submit",
-      attrs: { novalidate: true, onsubmit: "return false;" },
+      attrs: { novalidate: true, "hx-boost": "false" },
     });
     hosts.forEach(function (host, index) {
       renderField(host, index);
