@@ -32,6 +32,7 @@
   {% for blog in blogs %}
   {% include 'partials/_blog_list_card.html' %}
   {% endfor %}
+  {% if blogs.has_previous or blogs.has_next %}
   <div class="pagination py-8 flex justify-between items-center">
     {% if blogs.has_previous %}
     <a class='btn-pagination'
@@ -45,5 +46,6 @@
       href="?page={{ blogs.next_page_number }}">Next <i class="bi bi-arrow-right"></i></a>
     {% endif %}
   </div>
+  {% endif %}
 </div>
 {% endblock %}

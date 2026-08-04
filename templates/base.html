@@ -179,7 +179,11 @@
             var path = window.location.pathname;
             document.querySelectorAll('.nav-link').forEach(function(link) {
                 var href = link.getAttribute('href');
+                var navType = link.getAttribute('data-nav');
                 var isActive = (href === path) || (path.startsWith(href) && href !== '/');
+                if (navType === 'blog' && (path.startsWith('/topic') || path.startsWith('/topics') || path.startsWith('/search') || path.startsWith('/blog'))) {
+                    isActive = true;
+                }
                 link.classList.remove('text-cyan-300', 'bg-white/5', 'text-gray-300', 'hover:text-white', 'hover:bg-white/10');
                 if (isActive) {
                     link.classList.add('text-cyan-300', 'bg-white/5');

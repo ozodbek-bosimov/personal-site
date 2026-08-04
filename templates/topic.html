@@ -62,6 +62,7 @@
   {% endfor %}
   {% endif %}
 
+  {% if topic_posts.has_previous or topic_posts.has_next %}
   <div class="pagination py-8 flex justify-between items-center">
     {% if topic_posts.has_previous %}
     <a class='btn-pagination'
@@ -75,5 +76,6 @@
       href="?page={{ topic_posts.next_page_number }}">Next <i class="bi bi-arrow-right"></i></a>
     {% endif %}
   </div>
+  {% endif %}
 </div>
 {% endblock %}
