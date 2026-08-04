@@ -226,6 +226,14 @@ body {
    rules win over the utility because base.css loads after dist. */
 .mob-nav {
     transition-property: transform, opacity;
+    /* Floating panel elevation — matches the search modal / back-to-top
+       so the menu reads as a layer hovering above the page, not a flat
+       rectangle pinned to the nav. The inset 1px white ring reproduces the
+       template's ring-1 ring-inset ring-white/5 utility, which sets
+       box-shadow too and would otherwise be replaced by this later rule. */
+    box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.35),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .transition-underline {

@@ -32,19 +32,25 @@ function initApp(root = document) {
   if (toggleButton && navbarContent && !toggleButton.dataset.initialized) {
     toggleButton.dataset.initialized = "true";
     function toggleMobileMenu() {
-      if (navbarContent.classList.contains("translate-x-full")) {
+      // translate-x-full is the hidden state, so this reads "was it closed?"
+      const wasHidden = navbarContent.classList.contains("translate-x-full");
+      if (wasHidden) {
         navbarContent.classList.remove("translate-x-full", "opacity-0");
       } else {
         navbarContent.classList.add("translate-x-full", "opacity-0");
       }
+      toggleButton.setAttribute("aria-expanded", wasHidden ? "true" : "false");
     }
 
     toggleButton.addEventListener("click", toggleMobileMenu);
 
+    function closeMobileMenu() {
+      navbarContent.classList.add("translate-x-full", "opacity-0");
+      toggleButton.setAttribute("aria-expanded", "false");
+    }
+
     root.querySelectorAll(".mob-nav a").forEach((link) => {
-      link.addEventListener("click", () => {
-        navbarContent.classList.add("translate-x-full", "opacity-0");
-      });
+      link.addEventListener("click", closeMobileMenu);
     });
 
     document.addEventListener("click", (event) => {
@@ -52,13 +58,11 @@ function initApp(root = document) {
         !navbarContent.contains(event.target) &&
         !toggleButton.contains(event.target)
       ) {
-        navbarContent.classList.add("translate-x-full", "opacity-0");
+        closeMobileMenu();
       }
     });
 
-    window.addEventListener("scroll", () => {
-      navbarContent.classList.add("translate-x-full", "opacity-0");
-    }, { passive: true });
+    window.addEventListener("scroll", closeMobileMenu, { passive: true });
   }
 
   // Search Modal
