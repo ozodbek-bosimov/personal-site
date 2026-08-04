@@ -14,7 +14,7 @@ from django.urls import reverse
 from home import views
 from home.context_processors import USED_TAGS_CACHE_KEY, used_tags
 from home.models import AboutMe, Blog
-from home.templatetags.blog_extras import reading_time
+from home.templatetags.blog_extras import lazy_iframes, reading_time
 
 
 @override_settings(
@@ -100,6 +100,43 @@ class TemplateTagTests(TestCase):
         # Should count words, not tags/attrs
         content = '<p>Hello <a href="x">world</a></p>'
         self.assertEqual(reading_time(content), 1)
+
+    def test_lazy_iframes_tags_spotify_embed_type(self):
+        # A single track must get a type-specific placeholder class so the
+        # shimmer matches the real (152px) widget height instead of the
+        # 16:9 box CKEditor reserves around it.
+        html = (
+            '<figure class="media"><div data-oembed-url="https://open.spotify.com/track/1">'
+            '<div style="padding-bottom:56.25%"><iframe src="https://open.spotify.com/embed/track/1">'
+            "</iframe></div></div></figure>"
+        )
+        out = lazy_iframes(html)
+        self.assertIn("lazy-iframe-ph--spotify", out)
+        self.assertIn("lazy-iframe-ph--spotify-track", out)
+
+    def test_lazy_iframes_spotify_artist_playlist_show(self):
+        artist = lazy_iframes(
+            '<iframe src="https://open.spotify.com/embed/artist/2?utm_source=generator"></iframe>'
+        )
+        self.assertIn("lazy-iframe-ph--spotify-artist", artist)
+
+        playlist = lazy_iframes(
+            '<iframe src="https://open.spotify.com/embed/playlist/4"></iframe>'
+        )
+        self.assertIn("lazy-iframe-ph--spotify-playlist", playlist)
+
+        show = lazy_iframes(
+            '<iframe src="https://open.spotify.com/embed/show/3"></iframe>'
+        )
+        self.assertIn("lazy-iframe-ph--spotify-show", show)
+
+    def test_lazy_iframes_keeps_original_iframe_in_template(self):
+        html = '<iframe src="https://open.spotify.com/embed/track/1"></iframe>'
+        out = lazy_iframes(html)
+        self.assertIn("<template class=\"lazy-tpl\">", out)
+        self.assertIn(
+            '<iframe src="https://open.spotify.com/embed/track/1"></iframe>', out
+        )
 
 
 @override_settings(

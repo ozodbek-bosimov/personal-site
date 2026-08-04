@@ -73,7 +73,15 @@ def lazy_iframes(content):
         ph_class = "lazy-iframe-ph"
         iframe_lower = iframe_open.lower()
         if "spotify.com" in iframe_lower:
+            # Spotify players are fixed-height widgets: a track is 152px,
+            # artist/album/playlist 352px, show/episode 232px. Tag the
+            # placeholder so its shimmer matches the real iframe height
+            # instead of defaulting to the 152px track size (which leaves
+            # a layout jump — and an oversized box — for longer embeds).
             ph_class += " lazy-iframe-ph--spotify"
+            spotify_type_match = re.search(r"spotify\.com/embed/([a-z]+)/", iframe_lower)
+            if spotify_type_match:
+                ph_class += f" lazy-iframe-ph--spotify-{spotify_type_match.group(1)}"
 
         return (
             f'<div class="{ph_class}"></div>'

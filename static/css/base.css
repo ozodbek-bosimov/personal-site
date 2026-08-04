@@ -1447,6 +1447,8 @@ p iframe {
 
 .blog-content iframe[src*="spotify.com"] {
     height: 152px;
+    border-radius: 14px;
+    background-color: transparent;
 }
 
 /* CKEditor instead wraps embeds in a relative box that reserves the
@@ -1459,6 +1461,56 @@ p iframe {
     margin: 0;
     aspect-ratio: auto;
     height: 100%;
+}
+
+/* ── Spotify embeds ──────────────────────────────────────────────
+   Spotify players are fixed-height widgets, NOT 16:9 videos: a track
+   is 152px, an artist 352px, a playlist/album 380px, a show/episode
+   232px (the sizes Spotify's own embed generator emits).
+   CKEditor's generic media wrapper above reserves a 16:9 box, which
+   stretches a single track to 56.25% of the width and leaves a huge
+   empty gap below the widget. Undo that box for Spotify embeds and
+   pin the iframe to the height Spotify actually renders, so corners
+   hug the widget instead of floating in white space. */
+.blog-content iframe[src*="spotify.com"][src*="/embed/artist/"],
+.blog-content iframe[src*="spotify.com"][src*="/embed/playlist/"],
+.blog-content iframe[src*="spotify.com"][src*="/embed/album/"] {
+    height: 450px;
+}
+
+.blog-content iframe[src*="spotify.com"][src*="/embed/show/"],
+.blog-content iframe[src*="spotify.com"][src*="/embed/episode/"] {
+    height: 232px;
+}
+
+/* Collapse the editor's aspect-ratio box for Spotify embeds. The
+   padding div is an immediate child of [data-oembed-url]; making it
+   static/auto lets the fixed-height iframe define the box. */
+.blog-content [data-oembed-url*="spotify.com"] > div {
+    position: static !important;
+    height: auto !important;
+    padding-bottom: 0 !important;
+}
+
+.blog-content [data-oembed-url*="spotify.com"] iframe {
+    position: static !important;
+    display: block;
+    width: 100%;
+    height: 152px !important;
+    margin: 0;
+    border-radius: 14px;
+    background-color: transparent;
+}
+
+.blog-content [data-oembed-url*="spotify.com"] iframe[src*="/embed/artist/"],
+.blog-content [data-oembed-url*="spotify.com"] iframe[src*="/embed/playlist/"],
+.blog-content [data-oembed-url*="spotify.com"] iframe[src*="/embed/album/"] {
+    height: 450px !important;
+}
+
+.blog-content [data-oembed-url*="spotify.com"] iframe[src*="/embed/show/"],
+.blog-content [data-oembed-url*="spotify.com"] iframe[src*="/embed/episode/"] {
+    height: 232px !important;
 }
 
 .video-wrapper {

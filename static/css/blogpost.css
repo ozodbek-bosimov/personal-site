@@ -42,6 +42,22 @@
 .lazy-iframe-ph.lazy-iframe-ph--spotify {
     aspect-ratio: auto;
     height: 152px;
+    border-radius: 14px;
+}
+
+/* Spotify players are fixed-height widgets (track 152px, artist 352px,
+   playlist/album 380px, show/episode 232px), so the shimmer placeholder
+   must match or the layout jumps when the iframe swaps in. (Two classes
+   keep the selector at least as specific as .lazy-iframe-ph--spotify.) */
+.lazy-iframe-ph.lazy-iframe-ph--spotify-artist,
+.lazy-iframe-ph.lazy-iframe-ph--spotify-album,
+.lazy-iframe-ph.lazy-iframe-ph--spotify-playlist {
+    height: 450px;
+}
+
+.lazy-iframe-ph.lazy-iframe-ph--spotify-show,
+.lazy-iframe-ph.lazy-iframe-ph--spotify-episode {
+    height: 232px;
 }
 
 /* ── Copy Link Button — Copied State ────────────────────────────── */
