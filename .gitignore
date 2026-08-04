@@ -10,6 +10,12 @@ shared/
 staticfiles/
 .env
 
+# Local dev symlinks to the main project (media/shared/logs) — git treats
+# symlinks as files, so the trailing-slash dir patterns above don't match them.
+media
+shared
+logs
+
 # macOS
 .DS_Store
 
