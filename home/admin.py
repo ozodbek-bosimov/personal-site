@@ -292,16 +292,16 @@ class AboutMeAdmin(admin.ModelAdmin):
             {"fields": ("hero_img", "hero_image_url", "hero_image_preview")},
         ),
         (
-            "Social Links",
+            "Social Links (Check 'Show in base/footer' to display link in site footer)",
             {
                 "fields": (
-                    "linkedin_url",
-                    "github_url",
-                    "telegram_url",
-                    "x_url",
-                    "leetcode_url",
-                    "youtube_url",
-                    "instagram_url",
+                    ("linkedin_url", "show_linkedin_in_base"),
+                    ("github_url", "show_github_in_base"),
+                    ("telegram_url", "show_telegram_in_base"),
+                    ("x_url", "show_x_in_base"),
+                    ("leetcode_url", "show_leetcode_in_base"),
+                    ("youtube_url", "show_youtube_in_base"),
+                    ("instagram_url", "show_instagram_in_base"),
                 )
             },
         ),

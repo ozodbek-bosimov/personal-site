@@ -84,6 +84,33 @@ class AboutMeSingletonTests(TestCase):
         self.assertEqual(only.pk, first.pk)
         self.assertEqual(only.name, "A2")
 
+    def test_aboutme_social_links_in_base_defaults_and_rendering(self):
+        about = AboutMe.objects.create(
+            name="Ozodbek",
+            profession="Engineer",
+            bio="Bio text",
+            email="test@example.com",
+            github_url="https://github.com/test",
+            telegram_url="https://t.me/test",
+            show_github_in_base=True,
+            show_telegram_in_base=False,
+        )
+        self.assertTrue(about.show_github_in_base)
+        self.assertFalse(about.show_telegram_in_base)
+
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "https://github.com/test")
+        self.assertNotContains(response, "https://t.me/test")
+
+        # Now enable telegram link in base
+        about.show_telegram_in_base = True
+        about.save()
+
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "https://t.me/test")
+
 
 class TemplateTagTests(TestCase):
     def test_reading_time_min_1(self):

@@ -127,12 +127,33 @@ class AboutMe(models.Model):
         help_text="External URL for your resume (used if no file is uploaded)",
     )
     linkedin_url = models.URLField(blank=True)
+    show_linkedin_in_base = models.BooleanField(
+        default=True, verbose_name="Show LinkedIn in base/footer"
+    )
     github_url = models.URLField(blank=True)
+    show_github_in_base = models.BooleanField(
+        default=True, verbose_name="Show GitHub in base/footer"
+    )
     telegram_url = models.URLField(blank=True)
+    show_telegram_in_base = models.BooleanField(
+        default=False, verbose_name="Show Telegram in base/footer"
+    )
     x_url = models.URLField(blank=True, help_text="X (formerly Twitter) profile URL")
+    show_x_in_base = models.BooleanField(
+        default=False, verbose_name="Show X in base/footer"
+    )
     leetcode_url = models.URLField(blank=True)
+    show_leetcode_in_base = models.BooleanField(
+        default=True, verbose_name="Show LeetCode in base/footer"
+    )
     youtube_url = models.URLField(blank=True, help_text="YouTube channel URL")
+    show_youtube_in_base = models.BooleanField(
+        default=False, verbose_name="Show YouTube in base/footer"
+    )
     instagram_url = models.URLField(blank=True, help_text="Instagram profile URL")
+    show_instagram_in_base = models.BooleanField(
+        default=False, verbose_name="Show Instagram in base/footer"
+    )
 
     @property
     def effective_resume(self):

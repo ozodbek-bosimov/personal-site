@@ -90,21 +90,48 @@
             </div>
             <div>
                 <div class="flex items-center gap-3">
-                    {% if about_me.github_url %}
+                    {% if about_me.github_url and about_me.show_github_in_base %}
                     <a href="{{ about_me.github_url }}" target="_blank" rel="noopener noreferrer"
                         class="btn-icon btn-icon--github" aria-label="GitHub profile">
                         <i class="bi bi-github text-xl"></i>
                     </a>
-                    {% endif %} {% if about_me.linkedin_url %}
+                    {% endif %}
+                    {% if about_me.linkedin_url and about_me.show_linkedin_in_base %}
                     <a href="{{ about_me.linkedin_url }}" target="_blank" rel="noopener noreferrer"
                         class="btn-icon btn-icon--linkedin" aria-label="LinkedIn profile">
                         <i class="bi bi-linkedin text-xl"></i>
                     </a>
-                    {% endif %} {% if about_me.leetcode_url %}
+                    {% endif %}
+                    {% if about_me.telegram_url and about_me.show_telegram_in_base %}
+                    <a href="{{ about_me.telegram_url }}" target="_blank" rel="noopener noreferrer"
+                        class="btn-icon btn-icon--telegram" aria-label="Telegram profile">
+                        <i class="bi bi-telegram text-xl"></i>
+                    </a>
+                    {% endif %}
+                    {% if about_me.leetcode_url and about_me.show_leetcode_in_base %}
                     <a href="{{ about_me.leetcode_url }}" target="_blank" rel="noopener noreferrer"
                         class="btn-icon btn-icon--leetcode" aria-label="LeetCode profile">
                         <span class="btn-icon__glyph"
                             style="--glyph: url('{% static 'images/icons/leetcode.svg' %}')"></span>
+                    </a>
+                    {% endif %}
+                    {% if about_me.x_url and about_me.show_x_in_base %}
+                    <a href="{{ about_me.x_url }}" target="_blank" rel="noopener noreferrer"
+                        class="btn-icon btn-icon--x" aria-label="X profile">
+                        <span class="btn-icon__glyph"
+                            style="--glyph: url('{% static 'images/icons/x.svg' %}')"></span>
+                    </a>
+                    {% endif %}
+                    {% if about_me.youtube_url and about_me.show_youtube_in_base %}
+                    <a href="{{ about_me.youtube_url }}" target="_blank" rel="noopener noreferrer"
+                        class="btn-icon btn-icon--youtube" aria-label="YouTube channel">
+                        <i class="bi bi-youtube text-xl"></i>
+                    </a>
+                    {% endif %}
+                    {% if about_me.instagram_url and about_me.show_instagram_in_base %}
+                    <a href="{{ about_me.instagram_url }}" target="_blank" rel="noopener noreferrer"
+                        class="btn-icon btn-icon--instagram" aria-label="Instagram profile">
+                        <i class="bi bi-instagram text-xl"></i>
                     </a>
                     {% endif %}
                 </div>
