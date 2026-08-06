@@ -39,37 +39,6 @@ A personal blog and portfolio website built with **Django 6**, **Tailwind CSS**,
 
 ---
 
-## Project Structure
-
-```
-personal-site/
-├── blogApp/                  # Django project config
-│   ├── settings.py           # All settings (security, CKEditor, rate limiting, logging)
-│   ├── urls.py               # Root URL conf (admin, sitemap, static/media/shared serving)
-│   ├── middleware.py          # Rate limiting, admin timeout, dev static no-cache
-│   └── views.py              # Admin keepalive endpoint
-├── home/                     # Main application
-│   ├── models.py             # AboutMe, Blog, Project, Experience, Skill, SharedFile
-│   ├── views.py              # All page views, API proxies, resume serving
-│   ├── urls.py               # App URL routes
-│   ├── admin.py              # Customized admin panels
-│   ├── sitemaps.py           # Sitemap generators
-│   ├── imaging.py            # WebP compression & conversion
-│   ├── storage.py            # Custom CKEditor file storage
-│   ├── content_tools.py      # Toolkit snippet parser & validator
-│   ├── context_processors.py # Global template context (about_me, tags, asset versioning)
-│   ├── templatetags/         # Custom filters (reading_time, lazy_iframes, content_tools)
-│   ├── management/commands/  # build_tools_catalog, prune_admin_log, migrate_media
-│   └── tests.py              # 66+ unit tests
-├── templates/                # Django templates (base, index, blog, about, projects, etc.)
-├── static/                   # CSS, JS, images, fonts
-├── tools/                    # Content Toolkit (snippets, preview gallery)
-├── media/                    # User-uploaded files
-├── shared/                   # Shared files (public downloads)
-└── requirements.txt          # Python dependencies
-```
-
----
 
 ## Local Development Setup
 
