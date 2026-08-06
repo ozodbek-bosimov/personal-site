@@ -11,6 +11,8 @@ urlpatterns = [
     path("topic/<str:topic>/", views.topic, name="topic"),
     path("topics/", views.topics, name="topics"),
     path("search/", views.search, name="search"),
+    path("resume/", views.resume_view, name="resume"),
+    path("resume/<str:filename>", views.resume_view, name="resume_file"),
     path(
         "github-contributions/",
         views.github_calendar_proxy,

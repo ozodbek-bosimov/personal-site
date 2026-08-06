@@ -734,3 +734,64 @@ class ContentToolsBuildCatalogTest(TestCase):
         out = StringIO()
         call_command("build_tools_catalog", check=True, stdout=out)
         self.assertIn("passed", out.getvalue().lower())
+
+
+class _FakeResumeFile:
+    name = "resume/Ozodbek_Bosimov.pdf"
+
+    def open(self, mode="rb"):
+        from io import BytesIO
+        return BytesIO(b"%PDF-1.4 dummy resume content")
+
+
+class ResumeViewTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        AboutMe.objects.all().delete()
+
+    def test_effective_resume_returns_resume_url(self):
+        about = AboutMe.objects.create(name="Ozodbek", resume_url="https://example.com/resume.pdf")
+        self.assertEqual(about.effective_resume, "https://example.com/resume.pdf")
+
+    def test_effective_resume_returns_custom_resume_path(self):
+        about = AboutMe.objects.create(name="Ozodbek")
+        about.resume_file = _FakeResumeFile()
+        self.assertEqual(about.effective_resume, "/resume/")
+
+    def test_resume_view_redirects_to_resume_url_if_no_file(self):
+        AboutMe.objects.create(name="Ozodbek", resume_url="https://example.com/resume.pdf")
+        response = self.client.get(reverse("resume"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "https://example.com/resume.pdf")
+
+    def test_resume_view_redirects_invalid_filename(self):
+        AboutMe.objects.create(name="Ozodbek", resume_url="https://example.com/resume.pdf")
+        response = self.client.get("/resume/invalid_name.pdf")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("resume"))
+
+    def test_resume_included_in_sitemap(self):
+        response = self.client.get("/sitemap.xml")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("/resume/", response.content.decode("utf-8"))
+
+    def test_resume_view_serves_file_when_filename_matches(self):
+        about = AboutMe.objects.create(name="Ozodbek")
+        about.resume_file = _FakeResumeFile()
+
+        with patch.object(AboutMe.objects, "first", return_value=about):
+            # /resume/ should work
+            res1 = self.client.get(reverse("resume"))
+            self.assertEqual(res1.status_code, 200)
+
+            # /resume/Ozodbek_Bosimov.pdf should work
+            res2 = self.client.get(reverse("resume_file", kwargs={"filename": "Ozodbek_Bosimov.pdf"}))
+            self.assertEqual(res2.status_code, 200)
+
+            # /resume/wrong_name.pdf should redirect to /resume/
+            res3 = self.client.get(reverse("resume_file", kwargs={"filename": "wrong_name.pdf"}))
+            self.assertEqual(res3.status_code, 302)
+            self.assertEqual(res3.url, reverse("resume"))
+
+
+

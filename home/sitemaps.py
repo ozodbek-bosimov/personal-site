@@ -23,6 +23,7 @@ class StaticViewSitemap(Sitemap):
         "projects": (0.7, "monthly"),
         "about": (1.0, "monthly"),
         "topics": (0.5, "weekly"),
+        "resume": (0.8, "monthly"),
     }
 
     def items(self):

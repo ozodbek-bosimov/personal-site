@@ -178,7 +178,7 @@ GLOBAL_RATE_LIMIT_BLOCK_SECONDS = int(
 )
 _global_rl_exempt = os.getenv(
     "GLOBAL_RATE_LIMIT_EXEMPT_PATH_PREFIXES",
-    "/_owner/,/static/,/media/,/shared/",
+    "/_owner/,/static/,/media/,/shared/,/resume/",
 )
 GLOBAL_RATE_LIMIT_EXEMPT_PATH_PREFIXES = [
     p.strip() for p in _global_rl_exempt.split(",") if p.strip()

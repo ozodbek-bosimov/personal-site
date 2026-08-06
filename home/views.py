@@ -3,6 +3,7 @@ import hashlib
 import json
 import logging
 import operator
+import os
 import re
 import urllib.error
 import urllib.parse
@@ -13,9 +14,10 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch, Q
-from django.http import HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.templatetags.static import static
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from home.models import AboutMe, Blog, Experience, ExperienceRole, Project, Skill
@@ -729,3 +731,34 @@ def detect_form_fields(request):
     result = {"fields": fields, "action": _google_form_response_url(final_url)}
     cache.set(result_cache_key, result, _FORM_DETECT_CACHE_SECONDS)
     return JsonResponse(result)
+
+
+def resume_view(request, filename=None):
+    """Serves the resume PDF under /resume/ or /resume/<filename>.
+
+    Redirects invalid/outdated filenames to canonical /resume/ instead of showing a 404.
+    """
+    about_me = AboutMe.objects.first()
+    if not about_me:
+        raise Http404("Resume not found.")
+
+    if about_me.resume_file:
+        actual_filename = os.path.basename(about_me.resume_file.name)
+        if filename is not None and filename != actual_filename:
+            return HttpResponseRedirect(reverse("resume"))
+
+        try:
+            file_obj = about_me.resume_file.open("rb")
+            response = FileResponse(file_obj, content_type="application/pdf")
+            response["Content-Disposition"] = f'inline; filename="{actual_filename}"'
+            return response
+        except (ValueError, FileNotFoundError, OSError):
+            pass
+
+    if about_me.resume_url:
+        if filename is not None:
+            return HttpResponseRedirect(reverse("resume"))
+        return HttpResponseRedirect(about_me.resume_url)
+
+    raise Http404("Resume file not found.")
+

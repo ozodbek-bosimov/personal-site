@@ -1,37 +1,79 @@
 # Django Blog & Portfolio
 
-A personal blog and portfolio website built with **Django 6**, **Tailwind CSS**, **HTMX**, and **CKEditor 5**. Features a modern design, a convenient admin panel, robust security defaults, and optimized performance out of the box.
+A personal blog and portfolio website built with **Django 6**, **Tailwind CSS**, **HTMX**, and **CKEditor 5**. Features a modern glassmorphism design, SPA-like navigation, a rich content toolkit, and production-ready security defaults.
 
 ## Key Features
 
-- **Blog System** — Write and publish articles, organize them by topics, auto-calculate reading time, and embed YouTube videos with sanitized iframes.
-- **SPA-like Navigation** — Uses HTMX for seamless page transitions without full page reloads, providing a faster, app-like user experience.
-- **Portfolio & Experience** — Showcase projects, work experience (displayed in a timeline format), and skills — all fully manageable from the admin panel.
-- **About Me (Singleton)** — A single-instance model for managing personal info, social links, and a downloadable CV on the homepage.
-- **Rich Text Editing** — CKEditor 5 integration for beautifully formatted articles and bio sections with inline images and videos.
-- **Shared Files** — Upload large files, browse them, copy their public URL directly from the admin panel, and share via `/shared/` links.
-- **Auto Caching** — Pages and querysets are cached in memory (LocMemCache). Caches are automatically invalidated through Django signals whenever a model changes.
-- **Auto WebP & Compression** — Uploaded images are automatically compressed (preserving quality) and converted to WebP format.
-- **Auto Cleanup (Signals)** — When an object is edited or deleted, its orphaned images and unused CKEditor media files are automatically removed from disk.
-- **Rate Limiting & Security** — IP-based request throttling middleware to mitigate DDoS and bot abuse, plus built-in CSRF, XSS, and other attack protections.
-- **Admin Session & Log Pruning** — Configurable admin session timeout and automatic (or manual) pruning of old admin action log entries.
+- **Blog System** — Write and publish articles organized by topics. Auto-calculated reading time, auto-generated Table of Contents (h2/h3), and sanitized YouTube/Spotify embed support with lazy loading.
+- **SPA-like Navigation** — HTMX-powered page transitions with active nav state tracking for a fast, app-like browsing experience without full page reloads.
+- **Portfolio & Experience** — Showcase projects and work experience (timeline format) with skills — all manageable from the admin panel.
+- **About Me (Singleton)** — A single-instance model for managing personal info, social links (GitHub, LinkedIn, Telegram, LeetCode, YouTube, Instagram — each individually togglable in the footer), and a downloadable resume.
+- **Clean Resume URL** — Resume is served at `/resume/` (canonical) and `/resume/<filename>` with smart fallback: invalid filenames redirect to `/resume/` instead of showing a 404. Included in `sitemap.xml` for SEO.
+- **Rich Text Editing** — CKEditor 5 integration with General HTML Support (allow-all mode) for formatted articles with inline images, videos, and custom content blocks.
+- **Content Toolkit** — A library of paste-able HTML blocks (callouts, tabs, checklists, quizzes, flashcards, Google Forms, ratings, Spotify embeds) for CKEditor. Blocks survive CKEditor's save/reopen cycle, render without JavaScript, and load CSS/JS only on pages that use them. See [`tools/README.md`](tools/README.md) for full documentation.
+- **Admin Toolkit Picker** — A searchable insert panel above each CKEditor instance for quickly inserting content toolkit blocks. Catalog is auto-generated via `manage.py build_tools_catalog`.
+- **Shared Files** — Upload files, browse them, copy their public URL from admin, and share via `/shared/` links.
+- **Auto WebP & Compression** — Uploaded images (including CKEditor uploads) are automatically compressed and converted to WebP format via Pillow.
+- **Auto Cleanup (Signals)** — Orphaned images, unused CKEditor media, old resume files, and shared files are automatically removed from disk when objects are edited or deleted.
+- **Auto Caching** — Pages and querysets are cached in memory (LocMemCache), automatically invalidated via Django signals on model changes.
+- **SEO** — Auto-generated `sitemap.xml` (static pages, blog posts, topics, resume), `robots.txt`, and proper meta tags.
+- **Search** — Full-text search across blog posts with highlighted results.
+- **GitHub Contributions Calendar** — Proxied GitHub contribution graph embedded on the homepage.
+- **LeetCode Stats** — Proxied LeetCode statistics displayed on the homepage.
+- **Rate Limiting & Security** — IP-based request throttling middleware, plus CSRF, XSS, HSTS, and clickjacking protections. Static/media/shared/resume paths are exempt from rate limiting.
+- **Admin Session & Log Pruning** — Configurable admin session timeout and automatic pruning of old admin action log entries via `manage.py prune_admin_log`.
+- **File Logging** — Optional rotating file logging for production error tracking.
+- **Custom 404 Page** — Themed error page consistent with the site design.
 
 ## Tech Stack
 
 | Layer | Technology |
 | --- | --- |
 | **Backend** | Django 6.x |
-| **Database** | SQLite (default — portable and easy to migrate) |
+| **Database** | SQLite (portable, easy to migrate) |
 | **Frontend** | Django Templates, Tailwind CSS, HTMX |
 | **Rich Text Editor** | django-ckeditor-5 |
-| **Deployment** | Gunicorn, Nginx, WhiteNoise (static files) |
 | **Image Processing** | Pillow (WebP conversion & resizing) |
+| **Deployment** | Gunicorn, Nginx, WhiteNoise (static files) |
+| **Environment** | python-dotenv |
+
+---
+
+## Project Structure
+
+```
+personal-site/
+├── blogApp/                  # Django project config
+│   ├── settings.py           # All settings (security, CKEditor, rate limiting, logging)
+│   ├── urls.py               # Root URL conf (admin, sitemap, static/media/shared serving)
+│   ├── middleware.py          # Rate limiting, admin timeout, dev static no-cache
+│   └── views.py              # Admin keepalive endpoint
+├── home/                     # Main application
+│   ├── models.py             # AboutMe, Blog, Project, Experience, Skill, SharedFile
+│   ├── views.py              # All page views, API proxies, resume serving
+│   ├── urls.py               # App URL routes
+│   ├── admin.py              # Customized admin panels
+│   ├── sitemaps.py           # Sitemap generators
+│   ├── imaging.py            # WebP compression & conversion
+│   ├── storage.py            # Custom CKEditor file storage
+│   ├── content_tools.py      # Toolkit snippet parser & validator
+│   ├── context_processors.py # Global template context (about_me, tags, asset versioning)
+│   ├── templatetags/         # Custom filters (reading_time, lazy_iframes, content_tools)
+│   ├── management/commands/  # build_tools_catalog, prune_admin_log, migrate_media
+│   └── tests.py              # 66+ unit tests
+├── templates/                # Django templates (base, index, blog, about, projects, etc.)
+├── static/                   # CSS, JS, images, fonts
+├── tools/                    # Content Toolkit (snippets, preview gallery)
+├── media/                    # User-uploaded files
+├── shared/                   # Shared files (public downloads)
+└── requirements.txt          # Python dependencies
+```
 
 ---
 
 ## Local Development Setup
 
-### 1. Clone the repository and install dependencies
+### 1. Clone and install dependencies
 ```bash
 git clone https://github.com/ozodbek-bosimov/personal-site.git
 cd personal-site
@@ -42,7 +84,6 @@ pip install -r requirements.txt
 ```
 
 ### 2. Create the `.env` file
-Create a `.env` file in the project root with the following contents:
 ```env
 DJANGO_SECRET_KEY=your-local-secret-key
 DJANGO_DEBUG=true
@@ -57,9 +98,9 @@ GLOBAL_RATE_LIMIT_ENABLED=false
 
 ### 3. Run migrations and start the server
 ```bash
-python manage.py makemigrations
 python manage.py migrate
 python manage.py createsuperuser
+python manage.py build_tools_catalog
 python manage.py runserver
 ```
 
@@ -67,17 +108,29 @@ python manage.py runserver
 
 ---
 
+## Management Commands
+
+| Command | Description |
+| --- | --- |
+| `manage.py build_tools_catalog` | Build the content toolkit JS catalog from `tools/snippets/` |
+| `manage.py build_tools_catalog --check` | Validate snippets without writing (CI-friendly) |
+| `manage.py prune_admin_log` | Delete admin log entries older than `ADMIN_LOG_RETENTION_DAYS` |
+| `manage.py prune_admin_log --dry-run` | Preview how many entries would be pruned |
+| `manage.py migrate_media_to_postimages` | One-time migration for media directory restructuring |
+
+---
+
 ## Production Deployment
 
 ### 1. Environment Variables
-Copy the provided example file and adjust it for your server:
+Copy the provided example file and configure it for your server:
 ```bash
 cp .env.example .env
 ```
-Edit the variables inside to match your domain names. Security settings and rate limiting should generally be enabled in production.
+See [`.env.example`](.env.example) for all available variables with descriptions.
 
 ### 2. Gunicorn (systemd) Service
-Recommended `/etc/systemd/system/gunicorn.service` configuration:
+Recommended `/etc/systemd/system/gunicorn.service`:
 
 ```ini
 [Unit]
@@ -99,7 +152,7 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 ```
-Enable and start the service:
+Enable and start:
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable gunicorn
@@ -142,7 +195,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_redirect off;
     }
-    
+
     listen 443 ssl http2;
     # ssl_certificate /path/to/fullchain.pem;
     # ssl_certificate_key /path/to/privkey.pem;
@@ -154,7 +207,7 @@ server {
     return 301 https://$host$request_uri;
 }
 ```
-After making changes, verify and reload:
+Verify and reload:
 ```bash
 sudo nginx -t && sudo systemctl reload nginx
 ```
@@ -163,17 +216,28 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ## Deploy Checklist (Copy-Paste)
 
-A one-liner to pull the latest changes and restart services:
+Pull latest changes and restart services:
 ```bash
 cd /var/www/personal-site && \
 git pull && \
 source env/bin/activate && \
 pip install -r requirements.txt && \
 python manage.py migrate && \
+python manage.py build_tools_catalog && \
 python manage.py collectstatic --clear --noinput && \
 sudo systemctl restart gunicorn && \
 sudo systemctl reload nginx
 ```
+
+---
+
+## Running Tests
+
+```bash
+python manage.py test
+```
+
+All 66+ tests cover: models, views, URL routing, template tags, caching, signals, sitemap, resume serving, content toolkit validation, and the catalog build command.
 
 ---
 
@@ -183,24 +247,28 @@ sudo systemctl reload nginx
 python manage.py check --deploy          # Full security audit
 python manage.py migrate                 # Apply database migrations
 python manage.py collectstatic --noinput # Collect static files
+python manage.py build_tools_catalog     # Rebuild content toolkit catalog
+python manage.py prune_admin_log         # Prune old admin logs
 sudo systemctl status gunicorn --no-pager -l
 sudo journalctl -u gunicorn -n 120 --no-pager
 sudo tail -n 120 /var/log/nginx/error.log
 ```
 
-
+---
 
 ## Common Issues & Troubleshooting
 
 1. **"Server Error (500)" on image/file upload, or images not displaying:**
-   The Nginx/Gunicorn user (`www-data`) must have write permissions on the `media`, `shared`, `logs` directories and the `db.sqlite3` file.
+   The Nginx/Gunicorn user (`www-data`) must have write permissions on writable directories:
    ```bash
    sudo chown -R www-data:www-data /var/www/personal-site/media /var/www/personal-site/shared /var/www/personal-site/logs
    sudo chown www-data:www-data /var/www/personal-site/db.sqlite3
    sudo chmod -R 775 /var/www/personal-site/media /var/www/personal-site/shared
    sudo chmod 664 /var/www/personal-site/db.sqlite3
    ```
-2. **"413 Request Entity Too Large" when uploading large files (e.g. via Shared Files):**
-   The `client_max_body_size` value in your Nginx config must be equal to or greater than Django's `DATA_UPLOAD_MAX_MEMORY_SIZE` (e.g. `20m;`). Reload Nginx after making the change.
-3. **"429 Too Many Requests" (IP blocked) during heavy browsing:**
-   The rate limiting middleware has kicked in to protect against DDoS and aggressive bots. Review `GLOBAL_RATE_LIMIT_ENABLED` and related settings in your `.env`. Make sure static assets are exempted by verifying that `GLOBAL_RATE_LIMIT_EXEMPT_PATH_PREFIXES` includes `/static/,/media/,/shared/`.
+2. **"413 Request Entity Too Large" when uploading files:**
+   The `client_max_body_size` in Nginx must be ≥ Django's `DATA_UPLOAD_MAX_MEMORY_SIZE` (default `20m`). Reload Nginx after changing.
+3. **"429 Too Many Requests" (IP blocked):**
+   Rate limiting middleware has kicked in. Review `GLOBAL_RATE_LIMIT_ENABLED` and related settings in `.env`. Ensure `GLOBAL_RATE_LIMIT_EXEMPT_PATH_PREFIXES` includes `/_owner/,/static/,/media/,/shared/,/resume/`.
+4. **Content toolkit blocks not rendering:**
+   Run `python manage.py build_tools_catalog` after adding or modifying snippets in `tools/snippets/`. The runtime JS and CSS are loaded conditionally — only pages with `data-tk` markers in the content will load them.
