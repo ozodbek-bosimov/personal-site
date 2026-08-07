@@ -76,9 +76,7 @@ class Command(BaseCommand):
         )
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Wrote {len(snippets)} snippet(s) → {CATALOG_PATH}"
-            )
+            self.style.SUCCESS(f"Wrote {len(snippets)} snippet(s) → {CATALOG_PATH}")
         )
 
     # ── check ───────────────────────────────────────────────────────────
@@ -108,9 +106,7 @@ class Command(BaseCommand):
 
         if ok:
             self.stdout.write(
-                self.style.SUCCESS(
-                    f"All {len(snippets)} snippet(s) passed validation."
-                )
+                self.style.SUCCESS(f"All {len(snippets)} snippet(s) passed validation.")
             )
         else:
             raise CommandError("Snippet validation failed — see errors above.")

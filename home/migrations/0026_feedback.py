@@ -4,23 +4,36 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('home', '0025_projectimage_order_help_text'),
+        ("home", "0025_projectimage_order_help_text"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Feedback',
+            name="Feedback",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('email', models.EmailField(max_length=254)),
-                ('topic', models.CharField(blank=True, max_length=255)),
-                ('areas', models.CharField(blank=True, max_length=255)),
-                ('message', models.TextField()),
-                ('url', models.URLField(blank=True, help_text='The page where the feedback was submitted from')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("email", models.EmailField(max_length=254)),
+                ("topic", models.CharField(blank=True, max_length=255)),
+                ("areas", models.CharField(blank=True, max_length=255)),
+                ("message", models.TextField()),
+                (
+                    "url",
+                    models.URLField(
+                        blank=True,
+                        help_text="The page where the feedback was submitted from",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
     ]

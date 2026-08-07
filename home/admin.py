@@ -183,6 +183,9 @@ class BlogAdmin(admin.ModelAdmin):
     search_fields = ["title", "topic", "slug"]
     date_hierarchy = "time"
     ordering = ["-time"]
+    list_per_page = 25
+    save_on_top = True
+    save_as = True
     prepopulated_fields = {"slug": ("title",)}
     readonly_fields = ("thumbnail_preview", "updated_at")
     fieldsets = (
@@ -217,7 +220,8 @@ class BlogAdmin(admin.ModelAdmin):
         if not url:
             return "(No image)"
         return format_html(
-            '<img src="{}" style="max-width: 200px; height: auto; border-radius: 6px;" />',
+            '<img src="{}" alt="Current thumbnail preview" width="200" '
+            'style="max-width: 200px; height: auto; border-radius: 6px;" />',
             url,
         )
 
@@ -279,6 +283,7 @@ class AboutMeAdmin(admin.ModelAdmin):
         )
 
     readonly_fields = ("profile_image_preview", "hero_image_preview")
+    save_on_top = True
     fieldsets = (
         ("Personal Info", {"fields": ("name", "profession", "email", "phone")}),
         ("About", {"fields": ("bio",)}),
@@ -331,7 +336,8 @@ class AboutMeAdmin(admin.ModelAdmin):
         if not url:
             return "(No image)"
         return format_html(
-            '<img src="{}" style="max-width: 200px; height: auto; border-radius: 50%;" />',
+            '<img src="{}" alt="Profile image preview" width="200" height="200" '
+            'style="max-width: 200px; height: auto; border-radius: 50%;" />',
             url,
         )
 
@@ -341,7 +347,8 @@ class AboutMeAdmin(admin.ModelAdmin):
         if not url:
             return "(No image)"
         return format_html(
-            '<img src="{}" style="max-width: 320px; width: 100%; '
+            '<img src="{}" alt="Hero image preview" width="320" height="180" '
+            'style="max-width: 320px; width: 100%; '
             'height: auto; border-radius: 16px;" />',
             url,
         )
@@ -392,6 +399,8 @@ class SkillAdmin(admin.ModelAdmin):
     list_editable = ["order"]
     list_filter = [SkillLevelFilter]
     search_fields = ["name"]
+    list_per_page = 25
+    save_on_top = True
 
     @admin.display(description="Level", ordering="percentage")
     def level(self, obj):
@@ -477,6 +486,7 @@ class ProjectImageInline(admin.TabularInline):
     fields = ("preview", "image", "image_url", "caption", "order")
     readonly_fields = ("preview",)
     ordering = ("order", "id")
+    show_change_link = True
     verbose_name = "Image"
     verbose_name_plural = "Images"
 
@@ -510,12 +520,18 @@ class ProjectImageInline(admin.TabularInline):
         )
         if cover_pk == obj.pk:
             return format_html(
-                '<div><img src="{}" style="{}" /><div style="margin-top:4px;'
+                '<div><img src="{}" alt="Project image preview" width="120" height="68" '
+                'style="{}" /><div style="margin-top:4px;'
                 ' font-size:11px; font-weight:600; color:#93c5fd">Cover</div></div>',
                 url,
                 self.IMG_STYLE,
             )
-        return format_html('<img src="{}" style="{}" />', url, self.IMG_STYLE)
+        return format_html(
+            '<img src="{}" alt="Project image preview" width="120" height="68" '
+            'style="{}" />',
+            url,
+            self.IMG_STYLE,
+        )
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -549,6 +565,8 @@ class ProjectAdmin(admin.ModelAdmin):
         ("Meta", {"fields": ("order", "created_at")}),
     )
     search_fields = ["title", "description", "technologies"]
+    list_per_page = 25
+    save_on_top = True
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related("images")
@@ -559,7 +577,8 @@ class ProjectAdmin(admin.ModelAdmin):
         if not url:
             return mark_safe('<span style="color:#94a3b8">\u2014 none \u2014</span>')
         return format_html(
-            '<img src="{}" style="width: 72px; height: 41px; object-fit: cover; '
+            '<img src="{}" alt="Project cover preview" width="72" height="41" '
+            'style="width: 72px; height: 41px; object-fit: cover; '
             'border-radius: 4px; background: #111827;" />',
             url,
         )
@@ -685,6 +704,8 @@ class ExperienceAdmin(admin.ModelAdmin):
     list_display = ["company", "logo", "entry_type", "order"]
     list_editable = ["order"]
     search_fields = ["company"]
+    list_per_page = 25
+    save_on_top = True
     inlines = [ExperienceRoleInline]
     fieldsets = (
         (
@@ -714,7 +735,8 @@ class ExperienceAdmin(admin.ModelAdmin):
         if not url:
             return mark_safe('<span style="color:#94a3b8">\u2014</span>')
         return format_html(
-            '<img src="{}" style="width: 28px; height: 28px; object-fit: contain; '
+            '<img src="{}" alt="Company logo preview" width="28" height="28" '
+            'style="width: 28px; height: 28px; object-fit: contain; '
             'border-radius: 4px; background: #111827;" />',
             url,
         )

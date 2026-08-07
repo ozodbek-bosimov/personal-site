@@ -4,45 +4,58 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('home', '0027_delete_feedback'),
+        ("home", "0027_delete_feedback"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='aboutme',
-            name='show_github_in_base',
-            field=models.BooleanField(default=True, verbose_name='Show GitHub in base/footer'),
+            model_name="aboutme",
+            name="show_github_in_base",
+            field=models.BooleanField(
+                default=True, verbose_name="Show GitHub in base/footer"
+            ),
         ),
         migrations.AddField(
-            model_name='aboutme',
-            name='show_instagram_in_base',
-            field=models.BooleanField(default=False, verbose_name='Show Instagram in base/footer'),
+            model_name="aboutme",
+            name="show_instagram_in_base",
+            field=models.BooleanField(
+                default=False, verbose_name="Show Instagram in base/footer"
+            ),
         ),
         migrations.AddField(
-            model_name='aboutme',
-            name='show_leetcode_in_base',
-            field=models.BooleanField(default=True, verbose_name='Show LeetCode in base/footer'),
+            model_name="aboutme",
+            name="show_leetcode_in_base",
+            field=models.BooleanField(
+                default=True, verbose_name="Show LeetCode in base/footer"
+            ),
         ),
         migrations.AddField(
-            model_name='aboutme',
-            name='show_linkedin_in_base',
-            field=models.BooleanField(default=True, verbose_name='Show LinkedIn in base/footer'),
+            model_name="aboutme",
+            name="show_linkedin_in_base",
+            field=models.BooleanField(
+                default=True, verbose_name="Show LinkedIn in base/footer"
+            ),
         ),
         migrations.AddField(
-            model_name='aboutme',
-            name='show_telegram_in_base',
-            field=models.BooleanField(default=False, verbose_name='Show Telegram in base/footer'),
+            model_name="aboutme",
+            name="show_telegram_in_base",
+            field=models.BooleanField(
+                default=False, verbose_name="Show Telegram in base/footer"
+            ),
         ),
         migrations.AddField(
-            model_name='aboutme',
-            name='show_x_in_base',
-            field=models.BooleanField(default=False, verbose_name='Show X in base/footer'),
+            model_name="aboutme",
+            name="show_x_in_base",
+            field=models.BooleanField(
+                default=False, verbose_name="Show X in base/footer"
+            ),
         ),
         migrations.AddField(
-            model_name='aboutme',
-            name='show_youtube_in_base',
-            field=models.BooleanField(default=False, verbose_name='Show YouTube in base/footer'),
+            model_name="aboutme",
+            name="show_youtube_in_base",
+            field=models.BooleanField(
+                default=False, verbose_name="Show YouTube in base/footer"
+            ),
         ),
     ]

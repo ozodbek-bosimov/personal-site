@@ -162,7 +162,8 @@
                         Search
                     </div>
                     <div class="mb-4 flex space-x-2">
-                        <input name="q" type="text"
+                        <label class="sr-only" for="site-search-input">Search query</label>
+                        <input id="site-search-input" name="q" type="search"
                             class="searchInput w-full bg-white/5 text-white placeholder-gray-400 ring-1 ring-inset ring-white/10 rounded-[0.875rem] py-3 px-4 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/40 transition-colors font-light shadow-inner"
                             placeholder="Enter your search query…" autocomplete="off" spellcheck="false" />
                         <button type="submit"

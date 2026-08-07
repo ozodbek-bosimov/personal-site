@@ -14,7 +14,7 @@ as "leave it alone" so the caller stores the original untouched.
 
 from io import BytesIO
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 # Below this size a photo is already cheap to serve; re-encoding buys
 # little and can even cost bytes.
@@ -46,18 +46,23 @@ def compress_to_webp(fileobj, max_size=(1000, 1000), quality=80, original_size=N
             return None
 
         _rewind(fileobj)
-        img = Image.open(fileobj)
-        if not fits:
-            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+        with Image.open(fileobj) as source:
+            # Camera uploads often store orientation in EXIF instead of
+            # rotating pixels. Apply it before resizing so dimensions and
+            # the final WebP match what users actually see.
+            img = ImageOps.exif_transpose(source)
+            if not fits:
+                img.thumbnail(max_size, Image.Resampling.LANCZOS)
 
-        # Keep the alpha channel where there is one, drop it otherwise
-        has_alpha = img.mode in ("RGBA", "LA") or (
-            img.mode == "P" and "transparency" in img.info
-        )
-        img = img.convert("RGBA" if has_alpha else "RGB")
+            # Keep the alpha channel where there is one, drop it otherwise.
+            has_alpha = img.mode in ("RGBA", "LA") or (
+                img.mode == "P" and "transparency" in img.info
+            )
+            converted = img.convert("RGBA" if has_alpha else "RGB")
 
         buffer = BytesIO()
-        img.save(buffer, format="WEBP", quality=quality, method=4)
+        converted.save(buffer, format="WEBP", quality=quality, method=6)
+        converted.close()
         compressed_size = buffer.tell()
 
         # Never hand back something larger than what we were given.

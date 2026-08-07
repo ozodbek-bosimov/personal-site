@@ -30,8 +30,11 @@
 #session-warning-banner.session-restored {
     background: #28a745;
 }
-#session-warning-banner a {
+#session-warning-banner button {
     color: #fff;
+    background: transparent;
+    border: 0;
+    font: inherit;
     text-decoration: underline;
     margin-left: 16px;
     cursor: pointer;
@@ -41,10 +44,10 @@
 
 {% block footer %}
 {{ block.super }}
-<div id="session-warning-banner">
+<div id="session-warning-banner" role="status" aria-live="polite">
     <span id="session-warning-text">Your session has expired. Please extend it before saving.</span>
-    <a id="session-extend-btn">Extend session</a>
-    <a onclick="document.getElementById('session-warning-banner').style.display='none'">Close</a>
+    <button type="button" id="session-extend-btn">Extend session</button>
+    <button type="button" id="session-close-btn">Close</button>
 </div>
 <script data-cfasync="false">
 (function () {
@@ -56,6 +59,7 @@
     var banner   = document.getElementById('session-warning-banner');
     var msgEl    = document.getElementById('session-warning-text');
     var extBtn   = document.getElementById('session-extend-btn');
+    var closeBtn = document.getElementById('session-close-btn');
 
     /* ── helpers ─────────────────────────────────────── */
 
@@ -97,6 +101,10 @@
             }
             extBtn.textContent = 'Extend session';
         });
+    });
+
+    closeBtn.addEventListener('click', function () {
+        banner.style.display = 'none';
     });
 
     /* ── periodic keepalive while tab is active ─────── */

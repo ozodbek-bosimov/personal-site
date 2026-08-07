@@ -36,7 +36,7 @@ _IFRAME_RE = re.compile(
 # 20 KB (gzip) runtime for purely presentational blocks such as callouts,
 # quotes and CTA banners.
 _INTERACTIVE_TOOL_RE = re.compile(
-    r'''data-tk\s*=\s*["'](?:accordion|checklist|feedback|flashcards|gform|pros-cons|quiz|rating|spoiler|tabs|terminal|toc)["']''',
+    r"""data-tk\s*=\s*["'](?:accordion|checklist|feedback|flashcards|gform|pros-cons|quiz|rating|spoiler|tabs|terminal|toc)["']""",
     re.IGNORECASE,
 )
 
@@ -47,7 +47,7 @@ _INTERACTIVE_TOOL_RE = re.compile(
 # tk-checklist blocks, so a page that contains one needs the stylesheet and
 # the runtime too. Mirrors the detection in autoUpgradeNativeTaskLists.
 _NATIVE_TODO_RE = re.compile(
-    r'''class\s*=\s*["'][^"']*\b(?:todo-list|contains-task-list|task-list)\b|type\s*=\s*["']checkbox["']|[\u25a0\u25a1\u2610\u2611\u2612]|\s*\[[ xX]?\]''',
+    r"""class\s*=\s*["'][^"']*\b(?:todo-list|contains-task-list|task-list)\b|type\s*=\s*["']checkbox["']|[\u25a0\u25a1\u2610\u2611\u2612]|\s*\[[ xX]?\]""",
     re.IGNORECASE,
 )
 
@@ -79,7 +79,9 @@ def lazy_iframes(content):
             # instead of defaulting to the 152px track size (which leaves
             # a layout jump — and an oversized box — for longer embeds).
             ph_class += " lazy-iframe-ph--spotify"
-            spotify_type_match = re.search(r"spotify\.com/embed/([a-z]+)/", iframe_lower)
+            spotify_type_match = re.search(
+                r"spotify\.com/embed/([a-z]+)/", iframe_lower
+            )
             if spotify_type_match:
                 ph_class += f" lazy-iframe-ph--spotify-{spotify_type_match.group(1)}"
 
@@ -103,10 +105,7 @@ def needs_content_tools_runtime(content):
     """
     return bool(
         content
-        and (
-            _INTERACTIVE_TOOL_RE.search(content)
-            or _NATIVE_TODO_RE.search(content)
-        )
+        and (_INTERACTIVE_TOOL_RE.search(content) or _NATIVE_TODO_RE.search(content))
     )
 
 

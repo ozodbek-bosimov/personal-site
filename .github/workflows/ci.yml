@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Lint
+        run: ruff check .
+      - name: Format check
+        run: ruff format --check .
+      - name: Django checks
+        env:
+          DJANGO_DEBUG: "false"
+          DJANGO_SECRET_KEY: ci-only-secret-key-please-replace-with-a-real-secret
+          DJANGO_ALLOWED_HOSTS: testserver,localhost,127.0.0.1
+          DJANGO_CSRF_TRUSTED_ORIGINS: https://localhost
+          DJANGO_SESSION_COOKIE_SECURE: "true"
+          DJANGO_CSRF_COOKIE_SECURE: "true"
+          DJANGO_SECURE_SSL_REDIRECT: "true"
+          DJANGO_SECURE_HSTS_SECONDS: "31536000"
+        run: |
+          python manage.py check
+          python manage.py check --deploy
+      - name: Tests
+        run: python manage.py test
+      - name: Content toolkit validation
+        run: python manage.py build_tools_catalog --check
+      - name: Static files
+        env:
+          DJANGO_DEBUG: "false"
+          DJANGO_SECRET_KEY: ci-only-secret-key-please-replace-with-a-real-secret
+          DJANGO_ALLOWED_HOSTS: testserver,localhost,127.0.0.1
+        run: python manage.py collectstatic --noinput
+
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: theme/static_src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: theme/static_src/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+      - name: Build Tailwind CSS
+        run: npm run build
+      - name: JavaScript syntax checks
+        working-directory: .
+        run: |
+          for file in static/js/*.js; do
+            node --check "$file"
+          done

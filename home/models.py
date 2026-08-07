@@ -1,5 +1,4 @@
 import math
-import os
 import re
 from urllib.parse import urlparse
 
@@ -159,7 +158,11 @@ class AboutMe(models.Model):
     @property
     def effective_resume(self):
         """Return the canonical /resume/ URL if uploaded resume exists, otherwise the external resume URL."""
-        if self.resume_file and hasattr(self.resume_file, "name") and self.resume_file.name:
+        if (
+            self.resume_file
+            and hasattr(self.resume_file, "name")
+            and self.resume_file.name
+        ):
             return "/resume/"
         return self.resume_url or ""
 
@@ -1009,6 +1012,3 @@ def cleanup_sharedfile_on_delete(sender, instance, **kwargs):
                 storage.delete(instance.file.name)
         except Exception:
             pass
-
-
-

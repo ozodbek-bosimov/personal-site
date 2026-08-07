@@ -14,7 +14,13 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch, Q
-from django.http import FileResponse, Http404, HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import (
+    FileResponse,
+    Http404,
+    HttpResponse,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.shortcuts import render
 from django.templatetags.static import static
 from django.urls import reverse
@@ -433,7 +439,7 @@ def leetcode_proxy(request):
                 rect.ext-heatmap-14, rect.ext-heatmap-15, rect.ext-heatmap-16,
                 rect.ext-heatmap-17, rect.ext-heatmap-18, rect.ext-heatmap-19,
                 rect.ext-heatmap-20 { fill: #22d3ee !important; }
-                
+
                 #username-text, #username { font-size: 16px !important; }
                 #ranking { font-size: 12px !important; }
                 #total-solved-text { font-size: 20px !important; }
@@ -515,13 +521,12 @@ def _normalise_google_form_url(raw_url):
 
     edit_match = _GOOGLE_EDIT_FORM_PATH_RE.fullmatch(parsed.path)
     if host == "docs.google.com" and edit_match:
-        return (
-            "https://docs.google.com/forms/d/"
-            f"{edit_match.group('form_id')}/viewform"
-        )
+        return f"https://docs.google.com/forms/d/{edit_match.group('form_id')}/viewform"
 
     # A forms.gle link needs its Google-owned redirect to resolve the form ID.
-    return urllib.parse.urlunsplit(("https", "forms.gle", parsed.path, parsed.query, ""))
+    return urllib.parse.urlunsplit(
+        ("https", "forms.gle", parsed.path, parsed.query, "")
+    )
 
 
 class _GoogleFormsRedirectHandler(urllib.request.HTTPRedirectHandler):
@@ -680,7 +685,9 @@ def detect_form_fields(request):
     # deliberately placed here rather than penalising a quick cached lookup.
     if _form_detection_rate_limited(request):
         return JsonResponse(
-            {"error": "Too many detection requests. Please wait a minute and try again."},
+            {
+                "error": "Too many detection requests. Please wait a minute and try again."
+            },
             status=429,
         )
 
@@ -761,4 +768,3 @@ def resume_view(request, filename=None):
         return HttpResponseRedirect(about_me.resume_url)
 
     raise Http404("Resume file not found.")
-

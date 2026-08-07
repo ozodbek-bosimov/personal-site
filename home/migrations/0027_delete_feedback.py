@@ -4,13 +4,12 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('home', '0026_feedback'),
+        ("home", "0026_feedback"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='Feedback',
+            name="Feedback",
         ),
     ]

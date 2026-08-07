@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import tempfile
 import urllib.request
-from io import StringIO
+from io import BytesIO, StringIO
+from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -10,9 +11,20 @@ from django.core.cache import cache
 from django.core.management import call_command
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from PIL import Image
 
 from home import views
+from home.content_tools import (
+    Snippet,
+    check_all,
+    check_css_coverage,
+    check_preview_coverage,
+    check_snippet,
+    load_all,
+    parse_meta,
+)
 from home.context_processors import USED_TAGS_CACHE_KEY, used_tags
+from home.imaging import compress_to_webp
 from home.models import AboutMe, Blog
 from home.templatetags.blog_extras import lazy_iframes, reading_time
 
@@ -160,10 +172,25 @@ class TemplateTagTests(TestCase):
     def test_lazy_iframes_keeps_original_iframe_in_template(self):
         html = '<iframe src="https://open.spotify.com/embed/track/1"></iframe>'
         out = lazy_iframes(html)
-        self.assertIn("<template class=\"lazy-tpl\">", out)
+        self.assertIn('<template class="lazy-tpl">', out)
         self.assertIn(
             '<iframe src="https://open.spotify.com/embed/track/1"></iframe>', out
         )
+
+
+class ImageOptimizationTests(TestCase):
+    def test_large_image_is_resized_and_encoded_as_webp(self):
+        source = BytesIO()
+        Image.new("RGB", (2400, 1200), (20, 40, 60)).save(source, format="JPEG")
+        source.seek(0)
+
+        result = compress_to_webp(source, max_size=(1200, 800), quality=80)
+
+        self.assertIsNotNone(result)
+        output, _size = result
+        with Image.open(output) as optimized:
+            self.assertEqual(optimized.format, "WEBP")
+            self.assertEqual(optimized.size, (1200, 600))
 
 
 @override_settings(
@@ -510,7 +537,9 @@ class DetectFormFieldsTests(TestCase):
                 return DetectFormFieldsTests.form_url
 
             def read(self, _size):
-                test_case.fail("The body must not be read when Content-Length is too large")
+                test_case.fail(
+                    "The body must not be read when Content-Length is too large"
+                )
 
         class FakeOpener:
             def open(self, _request, timeout):
@@ -548,24 +577,6 @@ class DetectFormFieldsTests(TestCase):
 
 
 # ── Content toolkit ─────────────────────────────────────────────────────────
-
-
-from pathlib import Path
-
-from home.content_tools import (
-    ALLOWED_TAGS,
-    FORBIDDEN_TAGS,
-    Snippet,
-    check_all,
-    check_css_coverage,
-    check_preview_coverage,
-    check_snippet,
-    load_all,
-    load_snippet,
-    parse_html,
-    parse_meta,
-    walk,
-)
 
 
 class ContentToolsParseMetaTest(TestCase):
@@ -633,7 +644,9 @@ class ContentToolsValidationTest(TestCase):
         self.assertTrue(any("script" in p for p in problems))
 
     def test_on_handler_detected(self):
-        html = '<div data-tk="test" class="tk-block tk-test"><p onclick="x()">Hi</p></div>'
+        html = (
+            '<div data-tk="test" class="tk-block tk-test"><p onclick="x()">Hi</p></div>'
+        )
         problems = check_snippet(self._snippet(html))
         self.assertTrue(any("onclick" in p for p in problems))
 
@@ -687,17 +700,13 @@ class ContentToolsSnippetFilesTest(TestCase):
         """Every tk- class used in a snippet must have a CSS rule."""
         problems = check_css_coverage()
         if problems:
-            self.fail(
-                "CSS coverage gaps:\n  " + "\n  ".join(problems)
-            )
+            self.fail("CSS coverage gaps:\n  " + "\n  ".join(problems))
 
     def test_all_snippets_in_preview(self):
         """Every tool must appear in the preview gallery."""
         problems = check_preview_coverage()
         if problems:
-            self.fail(
-                "Preview coverage gaps:\n  " + "\n  ".join(problems)
-            )
+            self.fail("Preview coverage gaps:\n  " + "\n  ".join(problems))
 
     def test_load_all_returns_snippets(self):
         """Sanity check that snippets are found and loaded."""
@@ -723,7 +732,10 @@ class ContentToolsBuildCatalogTest(TestCase):
         output = out.getvalue()
         self.assertIn("snippet", output.lower())
 
-        catalog_path = Path(__file__).resolve().parent.parent / "static/js/generated/tools-catalog.js"
+        catalog_path = (
+            Path(__file__).resolve().parent.parent
+            / "static/js/generated/tools-catalog.js"
+        )
         self.assertTrue(catalog_path.is_file())
         content = catalog_path.read_text(encoding="utf-8")
         self.assertIn("__TK_CATALOG__", content)
@@ -741,6 +753,7 @@ class _FakeResumeFile:
 
     def open(self, mode="rb"):
         from io import BytesIO
+
         return BytesIO(b"%PDF-1.4 dummy resume content")
 
 
@@ -750,7 +763,9 @@ class ResumeViewTests(TestCase):
         AboutMe.objects.all().delete()
 
     def test_effective_resume_returns_resume_url(self):
-        about = AboutMe.objects.create(name="Ozodbek", resume_url="https://example.com/resume.pdf")
+        about = AboutMe.objects.create(
+            name="Ozodbek", resume_url="https://example.com/resume.pdf"
+        )
         self.assertEqual(about.effective_resume, "https://example.com/resume.pdf")
 
     def test_effective_resume_returns_custom_resume_path(self):
@@ -759,13 +774,17 @@ class ResumeViewTests(TestCase):
         self.assertEqual(about.effective_resume, "/resume/")
 
     def test_resume_view_redirects_to_resume_url_if_no_file(self):
-        AboutMe.objects.create(name="Ozodbek", resume_url="https://example.com/resume.pdf")
+        AboutMe.objects.create(
+            name="Ozodbek", resume_url="https://example.com/resume.pdf"
+        )
         response = self.client.get(reverse("resume"))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "https://example.com/resume.pdf")
 
     def test_resume_view_redirects_invalid_filename(self):
-        AboutMe.objects.create(name="Ozodbek", resume_url="https://example.com/resume.pdf")
+        AboutMe.objects.create(
+            name="Ozodbek", resume_url="https://example.com/resume.pdf"
+        )
         response = self.client.get("/resume/invalid_name.pdf")
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("resume"))
@@ -785,13 +804,14 @@ class ResumeViewTests(TestCase):
             self.assertEqual(res1.status_code, 200)
 
             # /resume/Ozodbek_Bosimov.pdf should work
-            res2 = self.client.get(reverse("resume_file", kwargs={"filename": "Ozodbek_Bosimov.pdf"}))
+            res2 = self.client.get(
+                reverse("resume_file", kwargs={"filename": "Ozodbek_Bosimov.pdf"})
+            )
             self.assertEqual(res2.status_code, 200)
 
             # /resume/wrong_name.pdf should redirect to /resume/
-            res3 = self.client.get(reverse("resume_file", kwargs={"filename": "wrong_name.pdf"}))
+            res3 = self.client.get(
+                reverse("resume_file", kwargs={"filename": "wrong_name.pdf"})
+            )
             self.assertEqual(res3.status_code, 302)
             self.assertEqual(res3.url, reverse("resume"))
-
-
-

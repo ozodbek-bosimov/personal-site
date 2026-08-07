@@ -44,7 +44,7 @@ class ContentToolsRuntimeFilterTests(SimpleTestCase):
         self.assertTrue(
             needs_content_tools_styles('<ul class="todo-list"><li>Task</li></ul>')
         )
-        self.assertFalse(needs_content_tools_styles('<p>plain prose</p>'))
+        self.assertFalse(needs_content_tools_styles("<p>plain prose</p>"))
         self.assertTrue(needs_content_tools_styles('<div data-tk="callout"></div>'))
 
 

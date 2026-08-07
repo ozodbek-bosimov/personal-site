@@ -19,5 +19,7 @@ urlpatterns = [
         name="github_contributions",
     ),
     path("leetcode-proxy/", views.leetcode_proxy, name="leetcode_proxy"),
-    path("api/detect-form-fields/", views.detect_form_fields, name="detect_form_fields"),
+    path(
+        "api/detect-form-fields/", views.detect_form_fields, name="detect_form_fields"
+    ),
 ]
