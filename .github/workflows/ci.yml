@@ -11,6 +11,10 @@ jobs:
   python:
     name: Python checks
     runs-on: ubuntu-latest
+    env:
+      DJANGO_DEBUG: "true"
+      DJANGO_SECRET_KEY: ci-only-secret-key-7f2d9a8c4e6b1a0f3d5c7e9b2a4f6d8c0e1a3b5c7d9f2a4
+      DJANGO_ALLOWED_HOSTS: testserver,localhost,127.0.0.1
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -27,8 +31,6 @@ jobs:
       - name: Django checks
         env:
           DJANGO_DEBUG: "false"
-          DJANGO_SECRET_KEY: ci-only-secret-key-7f2d9a8c4e6b1a0f3d5c7e9b2a4f6d8c0e1a3b5c7d9f2a4
-          DJANGO_ALLOWED_HOSTS: testserver,localhost,127.0.0.1
           DJANGO_CSRF_TRUSTED_ORIGINS: https://localhost
           DJANGO_SESSION_COOKIE_SECURE: "true"
           DJANGO_CSRF_COOKIE_SECURE: "true"
@@ -44,8 +46,6 @@ jobs:
       - name: Static files
         env:
           DJANGO_DEBUG: "false"
-          DJANGO_SECRET_KEY: ci-only-secret-key-7f2d9a8c4e6b1a0f3d5c7e9b2a4f6d8c0e1a3b5c7d9f2a4
-          DJANGO_ALLOWED_HOSTS: testserver,localhost,127.0.0.1
         run: python manage.py collectstatic --noinput
 
   frontend:
