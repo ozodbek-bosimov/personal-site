@@ -44,6 +44,12 @@ function initApp(root = document) {
 
     toggleButton.addEventListener("click", toggleMobileMenu);
 
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && !navbarContent.classList.contains("translate-x-full")) {
+        closeMobileMenu();
+      }
+    });
+
     function closeMobileMenu() {
       navbarContent.classList.add("translate-x-full", "opacity-0");
       toggleButton.setAttribute("aria-expanded", "false");
@@ -79,9 +85,11 @@ function initApp(root = document) {
     if (!searchModal) return;
     searchOpener = document.activeElement;
     searchModal.style.display = "block";
+    // Delay focus so the modal entry animation finishes first.
+    // On mobile this prevents the keyboard from pushing the modal off-screen.
     setTimeout(() => {
-      if (searchInput) searchInput.focus();
-    }, 50);
+      if (searchInput) searchInput.focus({ preventScroll: true });
+    }, 320);
   }
 
   function hideSearchModal() {
@@ -237,7 +245,7 @@ function initApp(root = document) {
       "touchstart",
       function (e) {
         var el = e.target.closest(interactive);
-        if (!el || el.closest("[data-image-lightbox], .project-image-preview-trigger, .image-lightbox-trigger")) return;
+        if (!el || el.closest("[data-image-lightbox], .project-image-preview-trigger, .image-lightbox-trigger, .nav-btn, .timeline-header-link, .timeline-card-header")) return;
 
         if (tappedEl && tappedEl !== el) {
           tappedEl.classList.remove("tapped");
