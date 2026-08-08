@@ -76,6 +76,10 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.timeline-card[data-company-url] {
+    cursor: pointer;
+}
+
 .timeline-item:last-child .timeline-card {
     border-bottom: none;
     padding-bottom: 0;
