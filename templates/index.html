@@ -410,7 +410,7 @@
 
         // Initialize on load and on HTMX swap
         initHero();
-        document.body.addEventListener("htmx:afterSettle", initHero);
+        document.addEventListener("htmx:afterSettle", initHero);
     })();
 </script>
 {% endblock extra_scripts %}
