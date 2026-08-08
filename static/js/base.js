@@ -36,10 +36,10 @@ function initApp(root = document) {
       const wasHidden = navbarContent.classList.contains("translate-x-full");
       if (wasHidden) {
         navbarContent.classList.remove("translate-x-full", "opacity-0");
+        toggleButton.setAttribute("aria-expanded", "true");
       } else {
-        navbarContent.classList.add("translate-x-full", "opacity-0");
+        closeMobileMenu();
       }
-      toggleButton.setAttribute("aria-expanded", wasHidden ? "true" : "false");
     }
 
     toggleButton.addEventListener("click", toggleMobileMenu);
@@ -53,6 +53,14 @@ function initApp(root = document) {
     function closeMobileMenu() {
       navbarContent.classList.add("translate-x-full", "opacity-0");
       toggleButton.setAttribute("aria-expanded", "false");
+      // The tap that opened the menu leaves the button with a sticky hover
+      // highlight on touch screens. Clear it so the button does not stay
+      // "lit" after the menu closes itself (e.g. on scroll).
+      toggleButton.blur();
+      document.body.classList.add("no-hover-reset");
+      requestAnimationFrame(function () {
+        document.body.classList.remove("no-hover-reset");
+      });
     }
 
     root.querySelectorAll(".mob-nav a").forEach((link) => {
@@ -85,6 +93,7 @@ function initApp(root = document) {
     if (!searchModal) return;
     searchOpener = document.activeElement;
     searchModal.style.display = "block";
+    document.body.classList.add("search-open");
     // Delay focus so the modal entry animation finishes first.
     // On mobile this prevents the keyboard from pushing the modal off-screen.
     setTimeout(() => {
@@ -95,6 +104,7 @@ function initApp(root = document) {
   function hideSearchModal() {
     if (searchModal) {
       searchModal.style.display = "none";
+      document.body.classList.remove("search-open");
       if (searchInput) searchInput.value = "";
     }
     // Return focus to the element that opened the dialog, if it still exists.
@@ -300,6 +310,9 @@ initApp(document);
 
 // Re-initialize after HTMX swaps in new content
 document.addEventListener("htmx:afterSettle", function(event) {
+  if (document.body) {
+    document.body.classList.remove("image-lightbox-open", "search-modal-open");
+  }
   initApp(event.target);
 });
 

@@ -53,6 +53,7 @@
 
     preview = lightbox.querySelector(".image-lightbox__image");
     caption = lightbox.querySelector(".image-lightbox__caption");
+    // Clicking anywhere on the overlay dismisses it.
     lightbox.addEventListener("click", close);
   }
 

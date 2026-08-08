@@ -341,18 +341,26 @@
                 current = headings[0];
             }
             
-            if (activeLink) {
-                activeLink._tocDash.classList.remove("is-active-dash");
-                activeLink._tocLink.classList.remove("is-active");
-            }
-            if (current && current._tocLink) {
-                activeLink = current;
-                activeLink._tocDash.classList.add("is-active-dash");
-                activeLink._tocLink.classList.add("is-active");
-                if (activeLink._tocLink.scrollIntoViewIfNeeded) {
-                    activeLink._tocLink.scrollIntoViewIfNeeded(false);
-                } else if (activeLink._tocLink.scrollIntoView) {
-                    activeLink._tocLink.scrollIntoView({ block: "nearest", behavior: "smooth" });
+            if (activeLink !== current) {
+                if (activeLink) {
+                    activeLink._tocDash.classList.remove("is-active-dash");
+                    activeLink._tocLink.classList.remove("is-active");
+                }
+                if (current && current._tocLink) {
+                    activeLink = current;
+                    activeLink._tocDash.classList.add("is-active-dash");
+                    activeLink._tocLink.classList.add("is-active");
+                    // Keep TOC item visible in sidebar without hijacking main window scroll
+                    const linkEl = activeLink._tocLink;
+                    const top = linkEl.offsetTop;
+                    const bot = top + linkEl.offsetHeight;
+                    if (top < tocBox.scrollTop) {
+                        tocBox.scrollTop = top;
+                    } else if (bot > tocBox.scrollTop + tocBox.clientHeight) {
+                        tocBox.scrollTop = bot - tocBox.clientHeight;
+                    }
+                } else {
+                    activeLink = null;
                 }
             }
         }
@@ -493,24 +501,29 @@
   setTimeout(debouncedInitBlogPost, 10);
 
   if (!window._blogPostListenerAdded) {
+    function cleanupListeners() {
+      if (window._blogpostScrollListener) {
+        window.removeEventListener("scroll", window._blogpostScrollListener);
+        window._blogpostScrollListener = null;
+      }
+      if (window._tocScrollListener) {
+        window.removeEventListener("scroll", window._tocScrollListener);
+        window._tocScrollListener = null;
+      }
+    }
+
     document.addEventListener("htmx:afterSettle", function () {
       if (window.location.pathname.includes('/blog/')) {
         debouncedInitBlogPost();
       } else {
-        if (window._blogpostScrollListener) {
-          window.removeEventListener("scroll", window._blogpostScrollListener);
-          window._blogpostScrollListener = null;
-        }
+        cleanupListeners();
       }
     });
     document.addEventListener("htmx:restored", function () {
       if (window.location.pathname.includes('/blog/')) {
         debouncedInitBlogPost();
       } else {
-        if (window._blogpostScrollListener) {
-          window.removeEventListener("scroll", window._blogpostScrollListener);
-          window._blogpostScrollListener = null;
-        }
+        cleanupListeners();
       }
     });
     window._blogPostListenerAdded = true;

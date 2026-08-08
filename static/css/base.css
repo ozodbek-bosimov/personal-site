@@ -237,6 +237,7 @@ body {
        box-shadow too and would otherwise be replaced by this later rule. */
     box-shadow:
         0 12px 32px rgba(0, 0, 0, 0.35),
+        0 0 20px rgba(6, 182, 212, 0.04),
         inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
@@ -979,6 +980,14 @@ span a.tapped,
 .timeline-role-content.tapped {
     transform: none !important;
     opacity: 1 !important;
+}
+
+/* Lock page scroll while the fullscreen search modal is open — the
+   image lightbox already does this via body.image-lightbox-open.
+   The mobile menu deliberately does NOT lock scroll: it closes itself
+   when the user scrolls (handled in base.js). */
+body.search-open {
+    overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {

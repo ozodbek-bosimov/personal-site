@@ -74,13 +74,20 @@
 
 /* ── Social Media Embed Iframes (responsive) ──────────────────── */
 /* All sizing lives in CSS so embeds scale to every viewport.      */
+/* No border-radius / clipping here: Twitter/X, Instagram and
+   LinkedIn render their own rounded cards inside the iframe, and a
+   forced radius on the iframe cuts their corners, leaving ugly
+   notches at the edges. The card's own corners + transparent iframe
+   background blend cleanly with the dark page. */
 .blog-content .embed-responsive {
     display: block;
     width: 100%;
     border: none;
-    border-radius: 0.75rem;
+    /* Override the generic .blog-content iframe radius (8px): these
+       providers draw their own rounded cards, so a forced radius on
+       the iframe clips their corners. */
+    border-radius: 0;
     margin: 1.5rem auto;
-    overflow: hidden;
 }
 
 /* ── Twitter / X ─────────────────────────────────────────────── */
@@ -89,7 +96,6 @@
     margin: 1.5rem auto;
     max-width: 450px;
     height: 630px;
-    border-radius: 8px;
 }
 
 /* ── Instagram ───────────────────────────────────────────────── */
@@ -98,7 +104,6 @@
     margin: 1.5rem auto;
     max-width: 450px;
     min-height: 400px;
-    border-radius: 8px;
     transition: height 0.3s ease-out;
 }
 
