@@ -9,6 +9,10 @@
       window.removeEventListener("scroll", window._tocScrollListener);
       window._tocScrollListener = null;
     }
+    if (window._tocMainScrollLock) {
+      window.removeEventListener("scroll", window._tocMainScrollLock);
+      window._tocMainScrollLock = null;
+    }
 
     /* ── Lazy Load Iframes (Run First to ensure they load even if other things fail) ────────────────────────────────────────── */
     function runLazyIframes() {
@@ -272,14 +276,31 @@
             clearTimeout(hoverTimeout);
             hoverTimeout = setTimeout(() => {
                 tocContainer.classList.add("is-hovered");
-            }, 180); // small delay to prevent accidental flashing
+            }, 180); // delay to prevent accidental flashing
         });
         tocContainer.addEventListener("mouseleave", () => {
             clearTimeout(hoverTimeout);
             hoverTimeout = setTimeout(() => {
-                tocContainer.classList.remove("is-hovered");
+                if (!tocContainer.classList.contains('is-locked-open')) {
+                    tocContainer.classList.remove("is-hovered");
+                }
             }, 180); 
         });
+
+        // Clear lock when scrolling completely stops
+        window._tocMainScrollLock = function() {
+            if (tocContainer.classList.contains('is-locked-open')) {
+                clearTimeout(tocContainer._scrollLockTimeout);
+                tocContainer._scrollLockTimeout = setTimeout(() => {
+                    tocContainer.classList.remove('is-locked-open');
+                    // Check if mouse is no longer hovering
+                    if (!tocContainer.matches(':hover')) {
+                        tocContainer.classList.remove('is-hovered');
+                    }
+                }, 150); // 150ms of no scrolling means smooth scroll is done
+            }
+        };
+        window.addEventListener("scroll", window._tocMainScrollLock, { passive: true });
 
         tocNav.innerHTML = "";
         
@@ -291,14 +312,11 @@
           }
           const link = document.createElement("a");
           link.href = "#" + heading.id;
-          // Item container - compact height so long TOC lists fit cleanly on any viewport
           link.className = "toc-item group/item flex items-center justify-end w-full cursor-pointer transition-colors shrink-0 px-1";
           
-          // The Dash (visible when not hovered, crisp slate-400 tint)
           const dash = document.createElement("span");
           dash.className = "toc-dash w-5 h-[2.5px] rounded-full bg-slate-400 transition-all duration-200";
           
-          // The Text (visible when hovered)
           const text = document.createElement("span");
           text.textContent = heading.textContent;
           text.className = "toc-text text-[12px] text-slate-400 truncate rounded-md px-2 py-1 transition-all flex-1 min-w-0 text-left";
@@ -314,10 +332,29 @@
           
           link.addEventListener("click", (e) => {
              e.preventDefault();
-             window.scrollTo({
-                 top: heading.getBoundingClientRect().top + window.scrollY - 80,
-                 behavior: "smooth"
-             });
+             
+             if (tocContainer) {
+                 tocContainer.classList.add('is-locked-open');
+                 tocContainer.classList.add('is-hovered');
+                 // The scroll listener will automatically remove the lock when scroll finishes
+             }
+
+             const target = heading.getBoundingClientRect().top + window.scrollY - 80;
+             window.scrollTo({ top: target, behavior: "smooth" });
+
+             // If the page is already at the target (or the target is clamped
+             // beyond max scroll), no scroll events will fire and the lock would
+             // never clear — release it manually after a short delay.
+             const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+             const effective = Math.max(0, Math.min(target, maxScroll));
+             if (Math.abs(effective - window.scrollY) < 2) {
+                 setTimeout(() => {
+                     tocContainer.classList.remove('is-locked-open');
+                     if (!tocContainer.matches(':hover')) {
+                         tocContainer.classList.remove('is-hovered');
+                     }
+                 }, 200);
+             }
           });
           
           tocNav.appendChild(link);

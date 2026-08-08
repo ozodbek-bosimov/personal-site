@@ -232,7 +232,8 @@
 }
 
 /* TOC Hover Styles */
-#toc-sidebar-container.is-hovered #toc-box {
+#toc-sidebar-container.is-hovered #toc-box,
+#toc-sidebar-container.is-locked-open #toc-box {
     width: 310px;
     background-color: rgba(31, 41, 55, 0.8); /* gray-800/80 */
     backdrop-filter: blur(24px);
@@ -243,20 +244,24 @@
     scrollbar-width: thin;
     scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
 }
-#toc-sidebar-container.is-hovered #toc-box::-webkit-scrollbar {
+#toc-sidebar-container.is-hovered #toc-box::-webkit-scrollbar,
+#toc-sidebar-container.is-locked-open #toc-box::-webkit-scrollbar {
     display: block;
     width: 4px;
 }
-#toc-sidebar-container.is-hovered #toc-box::-webkit-scrollbar-thumb {
+#toc-sidebar-container.is-hovered #toc-box::-webkit-scrollbar-thumb,
+#toc-sidebar-container.is-locked-open #toc-box::-webkit-scrollbar-thumb {
     background: rgba(148, 163, 184, 0.3);
     border-radius: 4px;
 }
 
 /* Show text, hide dash on hover */
-#toc-sidebar-container.is-hovered .toc-dash {
+#toc-sidebar-container.is-hovered .toc-dash,
+#toc-sidebar-container.is-locked-open .toc-dash {
     display: none !important;
 }
-#toc-sidebar-container.is-hovered .toc-text {
+#toc-sidebar-container.is-hovered .toc-text,
+#toc-sidebar-container.is-locked-open .toc-text {
     display: block !important;
     opacity: 1 !important;
 }
