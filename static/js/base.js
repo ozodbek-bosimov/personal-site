@@ -309,12 +309,15 @@ function initApp(root = document) {
 initApp(document);
 
 // Re-initialize after HTMX swaps in new content
-document.addEventListener("htmx:afterSettle", function(event) {
-  if (document.body) {
-    document.body.classList.remove("image-lightbox-open", "search-modal-open");
-  }
-  initApp(event.target);
-});
+if (!window._baseListenerAdded) {
+  window._baseListenerAdded = true;
+  document.addEventListener("htmx:afterSettle", function(event) {
+    if (document.body) {
+      document.body.classList.remove("image-lightbox-open", "search-open");
+    }
+    initApp(event.target);
+  });
+}
 
 // ── Rasmlarni drag qilishni to'xtatish ─────────────────────────────
 // CSS `-webkit-user-drag` Firefox'da ishlamaydi, shuning uchun document

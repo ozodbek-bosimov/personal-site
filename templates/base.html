@@ -223,7 +223,22 @@
                 }
             });
         }
-        document.addEventListener('htmx:afterSettle', updateNav);
+        if (!window.__navUpdateListenerAdded) {
+            window.__navUpdateListenerAdded = true;
+            document.addEventListener('htmx:afterSettle', updateNav);
+        }
+        
+        if (!window.__htmxErrorListenerAdded) {
+            window.__htmxErrorListenerAdded = true;
+            document.addEventListener('htmx:responseError', function(evt) {
+                if (evt.detail.xhr && evt.detail.xhr.status >= 400) {
+                    var targetUrl = evt.detail.requestConfig.path;
+                    if (targetUrl) {
+                        window.location.href = targetUrl;
+                    }
+                }
+            });
+        }
     })();
     </script>
 

@@ -268,27 +268,21 @@
 <script data-cfasync="false">
     // ── Hero Interactive Dot Grid & Typing Effect ───────────────────
     (function () {
-        let animationFrameId = null;
-        let resizeListener = null;
-        let pointerMoveListener = null;
-        let resetListener = null;
-        let typeTimeout = null;
-
         function initHero() {
-            // Clean up previous event listeners if any
-            if (resizeListener) window.removeEventListener("resize", resizeListener);
-            if (pointerMoveListener) window.removeEventListener("pointermove", pointerMoveListener);
-            if (resetListener) {
-                window.removeEventListener("pointerleave", resetListener);
-                window.removeEventListener("scroll", resetListener);
+            // Clean up previous event listeners if any from older swaps
+            if (window.__heroResizeListener) window.removeEventListener("resize", window.__heroResizeListener);
+            if (window.__heroPointerMoveListener) window.removeEventListener("pointermove", window.__heroPointerMoveListener);
+            if (window.__heroResetListener) {
+                window.removeEventListener("pointerleave", window.__heroResetListener);
+                window.removeEventListener("scroll", window.__heroResetListener);
             }
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
+            if (window.__heroAnimFrame) {
+                cancelAnimationFrame(window.__heroAnimFrame);
+                window.__heroAnimFrame = null;
             }
-            if (typeTimeout) {
-                clearTimeout(typeTimeout);
-                typeTimeout = null;
+            if (window.__heroTypeTimeout) {
+                clearTimeout(window.__heroTypeTimeout);
+                window.__heroTypeTimeout = null;
             }
 
             const canvas = document.getElementById("hero-grid");
@@ -320,16 +314,16 @@
                             ctx.fill();
                         }
                     }
-                    animationFrameId = null;
+                    window.__heroAnimFrame = null;
                 }
 
                 function queueRedraw() {
-                    if (!animationFrameId) {
-                        animationFrameId = requestAnimationFrame(render);
+                    if (!window.__heroAnimFrame) {
+                        window.__heroAnimFrame = requestAnimationFrame(render);
                     }
                 }
 
-                resizeListener = function () {
+                window.__heroResizeListener = function () {
                     w = canvas.width = window.innerWidth * devicePixelRatio;
                     h = canvas.height = window.innerHeight * devicePixelRatio;
                     canvas.style.width = window.innerWidth + "px";
@@ -345,10 +339,10 @@
                     queueRedraw();
                 };
 
-                resizeListener();
-                window.addEventListener("resize", resizeListener);
+                window.__heroResizeListener();
+                window.addEventListener("resize", window.__heroResizeListener);
                 
-                pointerMoveListener = function (e) {
+                window.__heroPointerMoveListener = function (e) {
                     if (e.pointerType === "touch") return;
                     if (mouse.x !== e.clientX || mouse.y !== e.clientY) {
                         mouse.x = e.clientX;
@@ -356,17 +350,17 @@
                         queueRedraw();
                     }
                 };
-                window.addEventListener("pointermove", pointerMoveListener);
+                window.addEventListener("pointermove", window.__heroPointerMoveListener);
                 
-                resetListener = function () {
+                window.__heroResetListener = function () {
                     if (mouse.x !== -1000 || mouse.y !== -1000) {
                         mouse.x = -1000;
                         mouse.y = -1000;
                         queueRedraw();
                     }
                 };
-                window.addEventListener("pointerleave", resetListener);
-                window.addEventListener("scroll", resetListener, { passive: true });
+                window.addEventListener("pointerleave", window.__heroResetListener);
+                window.addEventListener("scroll", window.__heroResetListener, { passive: true });
             }
 
             // Typing Effect
@@ -378,39 +372,46 @@
                     "Exploring new ideas",
                     "Thinking out loud",
                 ];
-                let pi = 0, ci = 0, deleting = false;
+                let pi = 0;
+                let ci = 0;
+                let isDeleting = false;
                 
                 function tick() {
-                    if (!document.getElementById("hero-typed")) return; // Stop if element is gone
+                    // Check if element is still in DOM (user didn't navigate away)
+                    if (!document.contains(el)) return;
+                    
                     const phrase = phrases[pi];
-                    if (!deleting) {
-                        el.textContent = phrase.slice(0, ci + 1);
-                        ci++;
-                        if (ci === phrase.length) {
-                            deleting = true;
-                            typeTimeout = setTimeout(tick, 2200);
-                            return;
-                        }
-                        typeTimeout = setTimeout(tick, 55);
-                    } else {
-                        el.textContent = phrase.slice(0, ci - 1);
+                    el.textContent = phrase.substring(0, ci);
+
+                    if (isDeleting) {
                         ci--;
                         if (ci === 0) {
-                            deleting = false;
+                            isDeleting = false;
                             pi = (pi + 1) % phrases.length;
-                            typeTimeout = setTimeout(tick, 350);
+                            window.__heroTypeTimeout = setTimeout(tick, 350);
                             return;
                         }
-                        typeTimeout = setTimeout(tick, 30);
+                        window.__heroTypeTimeout = setTimeout(tick, 30);
+                    } else {
+                        ci++;
+                        if (ci === phrase.length + 1) {
+                            isDeleting = true;
+                            window.__heroTypeTimeout = setTimeout(tick, 2000);
+                            return;
+                        }
+                        window.__heroTypeTimeout = setTimeout(tick, 60);
                     }
                 }
-                typeTimeout = setTimeout(tick, 600);
+                window.__heroTypeTimeout = setTimeout(tick, 600);
             }
         }
 
         // Initialize on load and on HTMX swap
         initHero();
-        document.addEventListener("htmx:afterSettle", initHero);
+        if (!window.__heroInitListenerAdded) {
+            window.__heroInitListenerAdded = true;
+            document.addEventListener("htmx:afterSettle", initHero);
+        }
     })();
 </script>
 {% endblock extra_scripts %}
