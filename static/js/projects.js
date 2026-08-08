@@ -145,12 +145,12 @@
   setTimeout(debouncedSetupAll, 10);
 
   if (!window._projectsListenerAdded) {
-    document.body.addEventListener("htmx:afterSettle", function () {
+    document.addEventListener("htmx:afterSettle", function () {
       if (window.location.pathname.includes('/projects')) {
         debouncedSetupAll();
       }
     });
-    document.body.addEventListener("htmx:restored", function () {
+    document.addEventListener("htmx:restored", function () {
       if (window.location.pathname.includes('/projects')) {
         debouncedSetupAll();
       }
@@ -436,8 +436,8 @@
   setupAllGalleries();
 
   if (!window._projectGalleryListenerAdded) {
-    document.body.addEventListener("htmx:afterSettle", setupAllGalleries);
-    document.body.addEventListener("htmx:restored", setupAllGalleries);
+    document.addEventListener("htmx:afterSettle", setupAllGalleries);
+    document.addEventListener("htmx:restored", setupAllGalleries);
     window._projectGalleryListenerAdded = true;
   }
 })();

@@ -29,7 +29,13 @@
   }
 
   function ensureLightbox() {
-    if (lightbox) return;
+    if (lightbox && document.body.contains(lightbox)) return;
+
+    if (lightbox && !document.body.contains(lightbox)) {
+      lightbox = null;
+      preview = null;
+      caption = null;
+    }
 
     lightbox = document.createElement("div");
     lightbox.className = "image-lightbox";
@@ -112,6 +118,7 @@
   }, true);
 
   setupImages();
-  document.body.addEventListener("htmx:afterSettle", setupImages);
-  document.body.addEventListener("htmx:restored", setupImages);
+  document.addEventListener("htmx:afterSettle", setupImages);
+  document.addEventListener("htmx:restored", setupImages);
+  document.addEventListener("htmx:historyRestore", setupImages);
 })();

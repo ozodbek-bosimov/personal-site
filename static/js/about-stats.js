@@ -413,14 +413,14 @@ setTimeout(initAboutStats, 10);
 
 // Set up HTMX navigation listeners (only once)
 if (!window._aboutStatsListenerAdded) {
-  document.body.addEventListener("htmx:afterSettle", function () {
-    if (window.location.pathname.includes("/about")) {
-      setTimeout(initAboutStats, 50);
+  document.addEventListener("htmx:afterSettle", function () {
+    if (window.location.pathname.includes('/about')) {
+      initAboutStats();
     }
   });
-  document.body.addEventListener("htmx:restored", function () {
-    if (window.location.pathname.includes("/about")) {
-      setTimeout(initAboutStats, 50);
+  document.addEventListener("htmx:restored", function () {
+    if (window.location.pathname.includes('/about')) {
+      initAboutStats();
     }
   });
   window._aboutStatsListenerAdded = true;

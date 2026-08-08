@@ -493,7 +493,7 @@
   setTimeout(debouncedInitBlogPost, 10);
 
   if (!window._blogPostListenerAdded) {
-    document.body.addEventListener("htmx:afterSettle", function () {
+    document.addEventListener("htmx:afterSettle", function () {
       if (window.location.pathname.includes('/blog/')) {
         debouncedInitBlogPost();
       } else {
@@ -503,7 +503,7 @@
         }
       }
     });
-    document.body.addEventListener("htmx:restored", function () {
+    document.addEventListener("htmx:restored", function () {
       if (window.location.pathname.includes('/blog/')) {
         debouncedInitBlogPost();
       } else {
