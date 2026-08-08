@@ -74,20 +74,22 @@
 
 /* ── Social Media Embed Iframes (responsive) ──────────────────── */
 /* All sizing lives in CSS so embeds scale to every viewport.      */
-/* No border-radius / clipping here: Twitter/X, Instagram and
-   LinkedIn render their own rounded cards inside the iframe, and a
-   forced radius on the iframe cuts their corners, leaving ugly
-   notches at the edges. The card's own corners + transparent iframe
-   background blend cleanly with the dark page. */
+/* Twitter/X, Instagram and LinkedIn draw their own cards inside   */
+/* the iframe, and being cross-origin their internals can't be     */
+/* restyled — so corners are rounded with clip-path to match the   */
+/* site, and the radius must sit on the iframe itself.             */
 .blog-content .embed-responsive {
     display: block;
     width: 100%;
     border: none;
-    /* Override the generic .blog-content iframe radius (8px): these
-       providers draw their own rounded cards, so a forced radius on
-       the iframe clips their corners. */
-    border-radius: 0;
     margin: 1.5rem auto;
+    /* Transparent while the embed loads, so a slow or failed load
+       shows the dark page instead of a white box. */
+    background-color: transparent;
+    /* Keep the generic .blog-content iframe radius (14px in base.css)
+       from double-rounding — corners are handled by the per-provider
+       clip-path below. */
+    border-radius: 0;
 }
 
 /* ── Twitter / X ─────────────────────────────────────────────── */
@@ -96,6 +98,9 @@
     margin: 1.5rem auto;
     max-width: 450px;
     height: 630px;
+    /* 14px to match the site; the 1px bottom shave hides the embed
+       page's white body peeking under the card's own border. */
+    clip-path: inset(0 0 1px 0 round 14px);
 }
 
 /* ── Instagram ───────────────────────────────────────────────── */
@@ -105,6 +110,7 @@
     max-width: 450px;
     min-height: 400px;
     transition: height 0.3s ease-out;
+    clip-path: inset(0 0 0 0 round 12px);
 }
 
 /* ── LinkedIn ────────────────────────────────────────────────── */
@@ -112,6 +118,7 @@
     max-width: 100%;
     height: 600px;
     min-height: 550px;
+    clip-path: inset(0 0 0 0 round 12px);
 }
 
 /* ── Mobile: shorter heights to avoid excess empty space ──────── */

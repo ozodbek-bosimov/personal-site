@@ -1467,7 +1467,7 @@ p iframe {
     max-width: 100%;
     margin: 1rem 0;
     border: none;
-    border-radius: 8px;
+    border-radius: 14px;
 }
 
 /* Bare iframes pasted into the editor get their own sizing */

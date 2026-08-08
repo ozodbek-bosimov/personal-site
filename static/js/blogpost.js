@@ -81,10 +81,12 @@
         const iframe = document.createElement('iframe');
         iframe.src = `https://platform.twitter.com/embed/Tweet.html?id=${tweetId}&theme=dark`;
         iframe.className = "embed-responsive embed-responsive--twitter";
-        iframe.frameBorder = "0";
-        iframe.scrolling = "yes"; // Allows scrolling if content is taller
-        iframe.allowTransparency = "true";
-        iframe.allowFullscreen = "true";
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('scrolling', 'yes'); // Allows scrolling if content is taller
+        iframe.setAttribute('allowtransparency', 'true');
+        iframe.setAttribute('allowfullscreen', 'true');
+        // Force dark mode color-scheme on the iframe itself to prevent white flashes
+        iframe.style.colorScheme = 'dark';
         return iframe;
       }
 
@@ -93,10 +95,11 @@
         const iframe = document.createElement('iframe');
         iframe.src = `https://www.instagram.com/p/${shortcode}/embed/?theme=dark`;
         iframe.className = "embed-responsive embed-responsive--instagram";
-        iframe.frameBorder = "0";
-        iframe.scrolling = "no";
-        iframe.allowTransparency = "true";
-        iframe.allowFullscreen = "true";
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('scrolling', 'no');
+        iframe.setAttribute('allowtransparency', 'true');
+        iframe.setAttribute('allowfullscreen', 'true');
+        iframe.style.colorScheme = 'dark';
         return iframe;
       }
 
