@@ -221,7 +221,7 @@ function initApp(root = document) {
     document.body.dataset.touchFixed = "true";
     var interactive =
       "a, button, .glass-card, .btn-icon, .btn-primary, .btn-ghost, " +
-      ".btn-hero-primary, .btn-hero-ghost, .btn-pagination, .nav-btn, " +
+      ".btn-hero-primary, .btn-hero-ghost, .btn-pagination, " +
       ".solid-content-card, .profile-card";
 
     window.addEventListener("pagehide", function () {
@@ -245,7 +245,7 @@ function initApp(root = document) {
       "touchstart",
       function (e) {
         var el = e.target.closest(interactive);
-        if (!el || el.closest("[data-image-lightbox], .project-image-preview-trigger, .image-lightbox-trigger, .nav-btn, .timeline-header-link, .timeline-card-header")) return;
+        if (!el || el.closest("[data-image-lightbox], .project-image-preview-trigger, .image-lightbox-trigger, .nav-btn, .searchBtn, .searchBtn1, .timeline-header-link, .timeline-card-header, .timeline-role-content")) return;
 
         if (tappedEl && tappedEl !== el) {
           tappedEl.classList.remove("tapped");

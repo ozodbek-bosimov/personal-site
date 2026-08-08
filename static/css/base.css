@@ -970,6 +970,17 @@ span a.tapped,
     transform: scale(0.985) !important;
 }
 
+/* Nav & timeline elements: no tap shrink */
+.nav-btn.tapped,
+.searchBtn.tapped,
+.searchBtn1.tapped,
+.timeline-header-link.tapped,
+.timeline-card-header.tapped,
+.timeline-role-content.tapped {
+    transform: none !important;
+    opacity: 1 !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
 
     *,
