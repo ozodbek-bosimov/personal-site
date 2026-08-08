@@ -43,11 +43,14 @@
                     {% for slide in gallery %}
                     <figure class="project-gallery__slide" data-gallery-slide role="group"
                         aria-roledescription="slide" aria-label="{{ forloop.counter }} of {{ gallery|length }}">
-                        <img class="project-gallery__img" src="{{ slide.url }}"
-                            alt="{% if slide.caption %}{{ slide.caption }}{% else %}{{ project.title }} — image {{ forloop.counter }}{% endif %}"
-                            width="1200" height="675"
-                            loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" decoding="async"
-                            draggable="false" />
+                        <button type="button" class="project-image-preview-trigger" data-image-lightbox
+                            aria-label="Open image preview: {% if slide.caption %}{{ slide.caption }}{% else %}{{ project.title }} — image {{ forloop.counter }}{% endif %}">
+                            <img class="project-gallery__img" src="{{ slide.url }}"
+                                alt="{% if slide.caption %}{{ slide.caption }}{% else %}{{ project.title }} — image {{ forloop.counter }}{% endif %}"
+                                width="1200" height="675"
+                                loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" decoding="async"
+                                draggable="false" />
+                        </button>
                         {% if slide.caption %}
                         <figcaption class="project-gallery__caption">{{ slide.caption }}</figcaption>
                         {% endif %}
@@ -86,10 +89,13 @@
         </div>
         {% else %}{% with slide=gallery.0 %}
         <div class="blog-list-thumb">
-            <img class="w-full h-full object-cover" src="{{ slide.url }}"
-                alt="{% if slide.caption %}{{ slide.caption }}{% else %}{{ project.title }}{% endif %}" loading="lazy"
-                width="1200" height="675"
-                draggable="false" />
+            <button type="button" class="project-image-preview-trigger" data-image-lightbox
+                aria-label="Open image preview: {% if slide.caption %}{{ slide.caption }}{% else %}{{ project.title }}{% endif %}">
+                <img class="w-full h-full object-cover" src="{{ slide.url }}"
+                    alt="{% if slide.caption %}{{ slide.caption }}{% else %}{{ project.title }}{% endif %}" loading="lazy"
+                    width="1200" height="675"
+                    draggable="false" />
+            </button>
         </div>
         {% endwith %}{% endif %}
         {% endif %}{% endwith %}
@@ -140,5 +146,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script data-cfasync="false" src="{% static 'js/projects.js' %}?v={{ STATIC_ASSET_VERSION }}"></script>
+<script data-cfasync="false" src="{% static 'js/projects.js' %}?v={{ STATIC_ASSET_VERSION }}&gallery=2"></script>
 {% endblock extra_scripts %}

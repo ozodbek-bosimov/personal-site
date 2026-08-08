@@ -348,6 +348,11 @@
       if (event.pointerType === "touch") return;
       if (event.button !== 0) return;
 
+      // Preview images are real buttons. Do not capture their mouse pointer
+      // for carousel dragging, otherwise the browser retargets the eventual
+      // click to the viewport and the preview button never receives it.
+      if (event.target.closest("[data-image-lightbox]")) return;
+
       dragging = true;
       moved = false;
       startX = event.clientX;

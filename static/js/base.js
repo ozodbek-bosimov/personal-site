@@ -237,7 +237,7 @@ function initApp(root = document) {
       "touchstart",
       function (e) {
         var el = e.target.closest(interactive);
-        if (!el) return;
+        if (!el || el.closest("[data-image-lightbox], .project-image-preview-trigger, .image-lightbox-trigger")) return;
 
         if (tappedEl && tappedEl !== el) {
           tappedEl.classList.remove("tapped");
