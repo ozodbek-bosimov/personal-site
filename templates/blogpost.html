@@ -111,7 +111,7 @@
 
     <!-- Blog Content -->
     <div class="blog-content ck-content leading-relaxed mt-8 reveal-fade" data-tk-page="blog/{{ blog.slug }}">
-        {{ blog.content|lazy_iframes|safe }}
+        {{ blog.content|x_cards|lazy_iframes|safe }}
     </div>
 
     <!-- Social Share Buttons -->

@@ -63,12 +63,34 @@
             loadIframe(ph);
             if (queue.length) setTimeout(tick, 1500);
         }, 2000);
-    }
-
-    try {
+    }    try {
         runLazyIframes();
     } catch (e) {
         console.error("Lazy iframe error:", e);
+    }
+
+    /* ── X card media fade-in ──────────────────────────────────── */
+    // Card media starts at opacity 0 (only under @media (scripting:
+    // enabled)) and fades in once its bytes arrive, instead of
+    // popping against the placeholder well. Cached images get the
+    // class immediately.
+    function runXCardImages() {
+      document.querySelectorAll(".x-embed__media img").forEach(function (img) {
+        if (img._xFadeBound) return;
+        img._xFadeBound = true;
+        if (img.complete && img.naturalWidth > 0) {
+          img.classList.add("is-loaded");
+        } else {
+          img.addEventListener("load", function () {
+            img.classList.add("is-loaded");
+          });
+        }
+      });
+    }
+    try {
+      runXCardImages();
+    } catch (e) {
+      console.error("X card image error:", e);
     }
 
     /* ── CKEditor / Bare Links Embeds Processing ───────────────────── */
@@ -172,7 +194,13 @@
     if (!window._embedResizeListenerAdded) {
       window._embedResizeListenerAdded = true;
       window.addEventListener('message', function (e) {
-        // Twitter embed resize
+        // Twitter embed resize — Twitter's embed page communicates its
+        // rendered height via postMessage. The protocol has changed over
+        // time, so accept all three shapes:
+        //   1. legacy:      { "twttr.private.resize": [{ height }] }
+        //   2. legacy rpc:  { method: "twttr.private.resize", params: [{ height }] }
+        //   3. current rpc: { "twttr.embed": { method: "twttr.private.resize",
+        //                                      params: [{ height }] } }
         if (e.origin === 'https://platform.twitter.com' && e.data) {
           var data = e.data;
           if (typeof data === 'string') {
@@ -188,6 +216,14 @@
             var arr2 = data.params;
             if (Array.isArray(arr2) && arr2[0] && arr2[0].height) {
               height = arr2[0].height;
+            }
+          } else if (data.twttr && data.twttr.embed) {
+            var embed = data.twttr.embed;
+            if (embed.method === 'twttr.private.resize' && Array.isArray(embed.params)) {
+              var arr3 = embed.params;
+              if (arr3[0] && arr3[0].height) {
+                height = arr3[0].height;
+              }
             }
           }
           if (height && height > 50) {
@@ -290,20 +326,8 @@
             }, 180); 
         });
 
-        // Clear lock when scrolling completely stops
-        window._tocMainScrollLock = function() {
-            if (tocContainer.classList.contains('is-locked-open')) {
-                clearTimeout(tocContainer._scrollLockTimeout);
-                tocContainer._scrollLockTimeout = setTimeout(() => {
-                    tocContainer.classList.remove('is-locked-open');
-                    // Check if mouse is no longer hovering
-                    if (!tocContainer.matches(':hover')) {
-                        tocContainer.classList.remove('is-hovered');
-                    }
-                }, 150); // 150ms of no scrolling means smooth scroll is done
-            }
-        };
-        window.addEventListener("scroll", window._tocMainScrollLock, { passive: true });
+        // Lock-release is handled inside the single throttled scroll
+        // listener below (it used to be a separate unthrottled listener).
 
         tocNav.innerHTML = "";
         
@@ -405,9 +429,38 @@
             }
         }
         
-        window._tocScrollListener = onScrollToc;
+        // One rAF-throttled scroll listener drives both the active-item
+        // highlight and the lock-release timeout. The two used to be
+        // separate listeners that ran getBoundingClientRect() loops on
+        // EVERY scroll event — that layout thrash starved the main
+        // thread and made the reading progress bar stutter on mobile.
+        const tocVisible = window.matchMedia("(min-width: 768px)"); // matches the CSS hide rule below 768px
+        let tocTicking = false;
+
+        window._tocScrollListener = function () {
+            if (tocTicking) return;
+            tocTicking = true;
+            requestAnimationFrame(function () {
+                tocTicking = false;
+                // Sidebar is display:none below 768px — skip all layout
+                // work there (this was the mobile jank source).
+                if (!tocVisible.matches) return;
+                onScrollToc();
+
+                // Release the lock ~150ms after scrolling stops.
+                if (tocContainer.classList.contains("is-locked-open")) {
+                    clearTimeout(tocContainer._scrollLockTimeout);
+                    tocContainer._scrollLockTimeout = setTimeout(function () {
+                        tocContainer.classList.remove("is-locked-open");
+                        if (!tocContainer.matches(":hover")) {
+                            tocContainer.classList.remove("is-hovered");
+                        }
+                    }, 150);
+                }
+            });
+        };
         window.addEventListener("scroll", window._tocScrollListener, { passive: true });
-        onScrollToc();
+        if (tocVisible.matches) onScrollToc();
       } else {
         tocContainer.style.display = "none";
       }
