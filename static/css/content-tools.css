@@ -686,13 +686,15 @@
 
 /* Flattened-markup fallback — CKEditor's GHS filter strips the __body
    wrapper and the __name <p>, leaving the link and meta as direct flex
-   siblings. Without these rules they compete for the row and the meta
-   crushes into a letter-by-letter column (overflow-wrap: anywhere lets
-   it break mid-word). Re-lay the direct link + meta as the name+meta
-   stack in a grid — badge and download icon span both rows, exactly
-   like the canonical __body layout — so the card looks the same with
-   or without the wrapper.  */
-.tk-filecard:has(> .tk-filecard__link) {
+   siblings. Two shapes survive a GHS round-trip, depending on how the
+   block was authored: the link as a direct child, or the link wrapped
+   in its own <p>. Without these rules the name and meta compete for the
+   row and the long filename overflows (cut off at the card edge) or the
+   meta crushes into a letter-by-letter column. Re-lay the direct link
+   + meta as the name+meta stack in a grid — badge and download icon
+   span both rows, exactly like the canonical __body layout — so the
+   card looks the same with or without the wrapper. */
+.tk-filecard:has(.tk-filecard__link):not(:has(.tk-filecard__body)) {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
@@ -703,24 +705,30 @@
     align-items: center;
 }
 
-.tk-filecard:has(> .tk-filecard__link)::before {
+.tk-filecard:has(.tk-filecard__link):not(:has(.tk-filecard__body))::before {
     grid-area: badge;
 }
 
-.tk-filecard:has(> .tk-filecard__link)::after {
+.tk-filecard:has(.tk-filecard__link):not(:has(.tk-filecard__body))::after {
     grid-area: icon;
 }
 
-.tk-filecard:has(> .tk-filecard__link) > .tk-filecard__link {
+.tk-filecard:has(.tk-filecard__link):not(:has(.tk-filecard__body)) > .tk-filecard__link,
+.tk-filecard:has(.tk-filecard__link):not(:has(.tk-filecard__body)) > p:has(> .tk-filecard__link) {
     grid-area: main;
+    margin: 0;
+    min-width: 0;
     font-size: var(--tk-fs-md);
     font-weight: 600;
     line-height: 1.35;
+    color: var(--tk-fg-strong);
 }
 
-.tk-filecard:has(> .tk-filecard__link) > .tk-filecard__meta {
+.tk-filecard:has(.tk-filecard__link):not(:has(.tk-filecard__body)) > .tk-filecard__meta,
+.tk-filecard:has(.tk-filecard__link):not(:has(.tk-filecard__body)) > p:has(> .tk-filecard__meta) {
     grid-area: meta;
     min-width: 0;
+    margin: 0;
 }
 
 /* Download affordance on the right edge. */
