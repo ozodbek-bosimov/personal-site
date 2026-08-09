@@ -359,7 +359,10 @@ def _render_x_card(data):
             video_url = _html.escape(data["video_url"])
             media = (
                 '<div class="x-embed__media">'
-                f'<video controls preload="none" playsinline '
+                # referrerpolicy="no-referrer": X's CDN (video.twimg.com)
+                # returns 403 to any request carrying a Referer header —
+                # including our own site — so the browser must send none.
+                f'<video controls preload="none" playsinline referrerpolicy="no-referrer" '
                 f'poster="{_html.escape(media_url)}" src="{video_url}">'
                 f'<a href="{status_url}" rel="noopener noreferrer">Watch on X</a>'
                 "</video>"
