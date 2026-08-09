@@ -684,6 +684,45 @@
     font-size: var(--tk-fs-xs);
 }
 
+/* Flattened-markup fallback — CKEditor's GHS filter strips the __body
+   wrapper and the __name <p>, leaving the link and meta as direct flex
+   siblings. Without these rules they compete for the row and the meta
+   crushes into a letter-by-letter column (overflow-wrap: anywhere lets
+   it break mid-word). Re-lay the direct link + meta as the name+meta
+   stack in a grid — badge and download icon span both rows, exactly
+   like the canonical __body layout — so the card looks the same with
+   or without the wrapper.  */
+.tk-filecard:has(> .tk-filecard__link) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+        "badge main icon"
+        "badge meta icon";
+    column-gap: 0.9rem;
+    row-gap: 0.15rem;
+    align-items: center;
+}
+
+.tk-filecard:has(> .tk-filecard__link)::before {
+    grid-area: badge;
+}
+
+.tk-filecard:has(> .tk-filecard__link)::after {
+    grid-area: icon;
+}
+
+.tk-filecard:has(> .tk-filecard__link) > .tk-filecard__link {
+    grid-area: main;
+    font-size: var(--tk-fs-md);
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.tk-filecard:has(> .tk-filecard__link) > .tk-filecard__meta {
+    grid-area: meta;
+    min-width: 0;
+}
+
 /* Download affordance on the right edge. */
 .tk-filecard::after {
     content: "";
