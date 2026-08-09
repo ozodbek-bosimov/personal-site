@@ -62,11 +62,11 @@ def gallery_to_thumbnail(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [
+    dependencies = [  # noqa: RUF012
         ("home", "0023_projectimage"),
     ]
 
-    operations = [
+    operations = [  # noqa: RUF012
         migrations.RunPython(thumbnail_to_gallery, gallery_to_thumbnail),
         migrations.RemoveField(
             model_name="project",

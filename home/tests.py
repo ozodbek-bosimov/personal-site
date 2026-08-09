@@ -525,7 +525,7 @@ class DetectFormFieldsTests(TestCase):
         test_case = self
 
         class OversizedResponse:
-            headers = {"Content-Length": str(views._FORM_DETECT_MAX_RESPONSE_BYTES + 1)}
+            headers = {"Content-Length": str(views._FORM_DETECT_MAX_RESPONSE_BYTES + 1)}  # noqa: RUF012
 
             def __enter__(self):
                 return self
@@ -546,7 +546,7 @@ class DetectFormFieldsTests(TestCase):
                 test_case.assertEqual(timeout, views._FORM_DETECT_TIMEOUT_SECONDS)
                 return OversizedResponse()
 
-        with patch("home.views.urllib.request.build_opener", return_value=FakeOpener()):
+        with patch("home.views.urllib.request.build_opener", return_value=FakeOpener()):  # noqa: SIM117
             with self.assertRaises(views._GoogleFormResponseTooLarge):
                 views._fetch_google_form_html(self.form_url)
 

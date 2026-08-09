@@ -254,7 +254,7 @@ class Skill(models.Model):
         return self.LEVEL_BANDS[-1][1]
 
     class Meta:
-        ordering = ["order", "name"]
+        ordering = ["order", "name"]  # noqa: RUF012
 
 
 class Experience(models.Model):
@@ -265,13 +265,13 @@ class Experience(models.Model):
     ExperienceRole children instead.  The template handles both cases.
     """
 
-    WORK_TYPE_CHOICES = [
+    WORK_TYPE_CHOICES = [  # noqa: RUF012
         ("on-site", "On-site"),
         ("hybrid", "Hybrid"),
         ("remote", "Remote"),
     ]
 
-    EMPLOYMENT_TYPE_CHOICES = [
+    EMPLOYMENT_TYPE_CHOICES = [  # noqa: RUF012
         ("full-time", "Full-time"),
         ("part-time", "Part-time"),
         ("self-employed", "Self-employed"),
@@ -389,7 +389,7 @@ class Experience(models.Model):
                 earliest = r.start_date
             if r.is_current:
                 any_current = True
-            elif r.end_date:
+            elif r.end_date:  # noqa: SIM102
                 if latest is None or r.end_date > latest:
                     latest = r.end_date
 
@@ -424,7 +424,7 @@ class Experience(models.Model):
         return self.company
 
     class Meta:
-        ordering = ["order", "-start_date"]
+        ordering = ["order", "-start_date"]  # noqa: RUF012
         verbose_name = "Experience"
         verbose_name_plural = "Experiences"
 
@@ -491,7 +491,7 @@ class ExperienceRole(models.Model):
         return f"{self.position} @ {self.experience.company}"
 
     class Meta:
-        ordering = ["-start_date"]
+        ordering = ["-start_date"]  # noqa: RUF012
         verbose_name = "Experience Role"
         verbose_name_plural = "Experience Roles"
 
@@ -595,7 +595,7 @@ class Project(models.Model):
         return slides[0]["url"] if slides else ""
 
     class Meta:
-        ordering = ["order", "-created_at"]
+        ordering = ["order", "-created_at"]  # noqa: RUF012
 
 
 class ProjectImage(models.Model):
@@ -634,7 +634,7 @@ class ProjectImage(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["order", "id"]
+        ordering = ["order", "id"]  # noqa: RUF012
         verbose_name = "Project image"
         verbose_name_plural = "Project images"
 
@@ -836,7 +836,7 @@ def cleanup_project_image_on_save(sender, instance, **kwargs):
         try:
             if default_storage.exists(old_name):
                 default_storage.delete(old_name)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
 
@@ -847,7 +847,7 @@ def cleanup_project_image_on_delete(sender, instance, **kwargs):
         try:
             if default_storage.exists(instance.image.name):
                 default_storage.delete(instance.image.name)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
 
@@ -880,7 +880,7 @@ def cleanup_experience_logo_on_save(sender, instance, **kwargs):
         try:
             if default_storage.exists(old_logo):
                 default_storage.delete(old_logo)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
 
@@ -891,7 +891,7 @@ def cleanup_experience_logo_on_delete(sender, instance, **kwargs):
         try:
             if default_storage.exists(instance.company_logo.name):
                 default_storage.delete(instance.company_logo.name)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
 
@@ -975,7 +975,7 @@ class SharedFile(models.Model):
         return self.name
 
     class Meta:
-        ordering = ["-uploaded_at"]
+        ordering = ["-uploaded_at"]  # noqa: RUF012
         verbose_name = "Shared File"
         verbose_name_plural = "Shared Files"
 
@@ -998,7 +998,7 @@ def cleanup_sharedfile_on_save(sender, instance, **kwargs):
             storage = get_shared_storage()
             if storage.exists(old_file):
                 storage.delete(old_file)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
 
@@ -1010,5 +1010,5 @@ def cleanup_sharedfile_on_delete(sender, instance, **kwargs):
             storage = get_shared_storage()
             if storage.exists(instance.file.name):
                 storage.delete(instance.file.name)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass

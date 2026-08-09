@@ -174,7 +174,7 @@ def x_cards(content):
         if data is None:
             try:
                 data = _fetch_x_data(tweet_id, status_url)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 data = _X_FETCH_FAILED
             cache.set(
                 f"x_card_{tweet_id}",
@@ -326,7 +326,7 @@ def _x_format_time(ms):
     """1782039173000 -> "3:52 PM · Jun 21, 2026"""
     if not ms:
         return ""
-    dt = _datetime.datetime.fromtimestamp(ms / 1000)
+    dt = _datetime.datetime.fromtimestamp(ms / 1000)  # noqa: DTZ006
     time_part = dt.strftime("%I:%M %p").lstrip("0")
     return f"{time_part} · {dt.strftime('%b %d, %Y')}"
 
@@ -377,9 +377,13 @@ def _render_x_card(data):
     likes = _x_format_count(data.get("likes"))
     replies = _x_format_count(data.get("replies"))
     if likes:
-        stats.append(f'<span class="x-embed__stat"><i class="bi bi-heart"></i>{likes}</span>')
+        stats.append(
+            f'<span class="x-embed__stat"><i class="bi bi-heart"></i>{likes}</span>'
+        )
     if replies:
-        stats.append(f'<span class="x-embed__stat"><i class="bi bi-chat"></i>{replies}</span>')
+        stats.append(
+            f'<span class="x-embed__stat"><i class="bi bi-chat"></i>{replies}</span>'
+        )
     stats_html = (
         f'<span class="x-embed__stats">{" ".join(stats)}</span>' if stats else ""
     )

@@ -24,11 +24,11 @@ def reverse_rename(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [
+    dependencies = [  # noqa: RUF012
         ("home", "0006_alter_aboutme_resume_file"),
     ]
 
-    operations = [
+    operations = [  # noqa: RUF012
         migrations.AlterField(
             model_name="blog",
             name="thumbnail_img",

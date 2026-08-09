@@ -71,7 +71,7 @@ def compress_to_webp(fileobj, max_size=(1000, 1000), quality=80, original_size=N
 
         buffer.seek(0)
         return buffer, compressed_size
-    except Exception:
+    except Exception:  # noqa: BLE001
         # Unsupported format (SVG), truncated upload, Pillow failure —
         # the caller stores the original file.
         return None
@@ -96,12 +96,12 @@ def _size_of(fileobj):
         size = fileobj.tell()
         fileobj.seek(current)
         return size
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
 
 
 def _rewind(fileobj):
     try:
         fileobj.seek(0)
-    except Exception:
+    except Exception:  # noqa: BLE001, S110
         pass
