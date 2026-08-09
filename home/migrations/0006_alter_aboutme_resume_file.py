@@ -4,11 +4,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0005_aboutme_resume_file_aboutme_resume_url"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.AlterField(
             model_name="aboutme",
             name="resume_file",

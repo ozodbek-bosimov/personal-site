@@ -684,16 +684,7 @@
     font-size: var(--tk-fs-xs);
 }
 
-/* Flattened-markup fallback — CKEditor's GHS filter strips the __body
-   wrapper and the __name <p>, leaving the link and meta as direct flex
-   siblings. Two shapes survive a GHS round-trip, depending on how the
-   block was authored: the link as a direct child, or the link wrapped
-   in its own <p>. Without these rules the name and meta compete for the
-   row and the long filename overflows (cut off at the card edge) or the
-   meta crushes into a letter-by-letter column. Re-lay the direct link
-   + meta as the name+meta stack in a grid — badge and download icon
-   span both rows, exactly like the canonical __body layout — so the
-   card looks the same with or without the wrapper. */
+/* Fallback grid layout for file cards if CKEditor strips the __body wrapper. */
 .tk-filecard:has(.tk-filecard__link):not(:has(.tk-filecard__body)) {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;

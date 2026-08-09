@@ -4,11 +4,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0021_alter_blog_meta_alter_project_description"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.AddField(
             model_name="project",
             name="end_date",

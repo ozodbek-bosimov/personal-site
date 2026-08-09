@@ -4,11 +4,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0019_blog_updated_at"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.AddField(
             model_name="aboutme",
             name="instagram_url",

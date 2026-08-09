@@ -183,65 +183,10 @@
       console.error("Embed processing error:", e);
     }
 
-    /* ── Auto-resize Twitter & Instagram embed iframes ──────────── */
+    /* ── Auto-resize Instagram embed iframes ──────────── */
     if (!window._embedResizeListenerAdded) {
       window._embedResizeListenerAdded = true;
       window.addEventListener('message', function (e) {
-        // Twitter embed resize — Twitter's embed page communicates its
-        // rendered height via postMessage. The protocol has changed over
-        // time, so accept all three shapes:
-        //   1. legacy:      { "twttr.private.resize": [{ height }] }
-        //   2. legacy rpc:  { method: "twttr.private.resize", params: [{ height }] }
-        //   3. current rpc: { "twttr.embed": { method: "twttr.private.resize",
-        //                                      params: [{ height }] } }
-        if (e.origin && (e.origin === 'https://platform.twitter.com' || e.origin.endsWith('.twitter.com') || e.origin.endsWith('.x.com')) && e.data) {
-          var data = e.data;
-          if (typeof data === 'string') {
-            try { data = JSON.parse(data); } catch (err) { return; }
-          }
-          var height = null;
-          var tweetId = null;
-          if (data['twttr.private.resize']) {
-            var arr = data['twttr.private.resize'];
-            if (Array.isArray(arr) && arr[0] && arr[0].height) {
-              height = arr[0].height;
-              if (arr[0].data && arr[0].data.tweet_id) tweetId = arr[0].data.tweet_id;
-            }
-          } else if (data.method === 'twttr.private.resize' && data.params) {
-            var arr2 = data.params;
-            if (Array.isArray(arr2) && arr2[0] && arr2[0].height) {
-              height = arr2[0].height;
-              if (arr2[0].data && arr2[0].data.tweet_id) tweetId = arr2[0].data.tweet_id;
-            }
-          } else if (data.twttr && data.twttr.embed) {
-            var embed = data.twttr.embed;
-            if (embed.method === 'twttr.private.resize' && Array.isArray(embed.params)) {
-              var arr3 = embed.params;
-              if (arr3[0] && arr3[0].height) {
-                height = arr3[0].height;
-                if (arr3[0].data && arr3[0].data.tweet_id) tweetId = arr3[0].data.tweet_id;
-              }
-            }
-          }
-          if (height && height > 50) {
-            var iframes = document.querySelectorAll('.embed-responsive--twitter');
-            iframes.forEach(function (iframe) {
-              var isMatched = false;
-              try {
-                if (iframe.contentWindow === e.source) isMatched = true;
-              } catch (err) { }
-              if (tweetId && (iframe.src || '').indexOf('id=' + tweetId) !== -1) isMatched = true;
-              // Fallback: If single twitter embed on page, it must be this one
-              if (iframes.length === 1) isMatched = true;
-
-              if (isMatched) {
-                iframe.style.setProperty('height', height + 'px', 'important');
-                iframe.style.setProperty('min-height', height + 'px', 'important');
-                iframe.dataset.resized = '1';
-              }
-            });
-          }
-        }
 
         // Instagram embed resize
         if (e.origin && e.origin.includes('instagram.com') && e.data) {

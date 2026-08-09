@@ -4,11 +4,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0020_aboutme_instagram_url_aboutme_youtube_url"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.AlterField(
             model_name="blog",
             name="meta",

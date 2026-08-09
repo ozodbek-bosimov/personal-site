@@ -4,11 +4,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0013_experiencerole_employment_type"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.AddField(
             model_name="experience",
             name="company_logo",

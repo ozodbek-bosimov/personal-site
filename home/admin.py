@@ -178,15 +178,15 @@ class BlogAdmin(admin.ModelAdmin):
             "js/admin_tools_picker.js?v=102",
         )
 
-    list_display = ["title", "topic", "created_at_display", "reading_time", "slug"]  # noqa: RUF012
-    list_filter = ["topic"]  # noqa: RUF012
-    search_fields = ["title", "topic", "slug"]  # noqa: RUF012
+    list_display = ["title", "topic", "created_at_display", "reading_time", "slug"]
+    list_filter = ["topic"]
+    search_fields = ["title", "topic", "slug"]
     date_hierarchy = "time"
-    ordering = ["-time"]  # noqa: RUF012
+    ordering = ["-time"]
     list_per_page = 25
     save_on_top = True
     save_as = True
-    prepopulated_fields = {"slug": ("title",)}  # noqa: RUF012
+    prepopulated_fields = {"slug": ("title",)}
     readonly_fields = ("thumbnail_preview", "updated_at")
     fieldsets = (
         ("Content", {"fields": ("title", "meta", "content")}),
@@ -387,7 +387,7 @@ class SkillAdmin(admin.ModelAdmin):
         class Meta:
             model = Skill
             fields = "__all__"
-            help_texts = {  # noqa: RUF012
+            help_texts = {
                 "percentage": (
                     "0-19% → Familiar, 20-39% → Basic, 40-69% → Working knowledge, "
                     "70-89% → Advanced, 90-100% → Expert"
@@ -395,10 +395,10 @@ class SkillAdmin(admin.ModelAdmin):
             }
 
     form = SkillAdminForm
-    list_display = ["name", "percentage", "level", "order"]  # noqa: RUF012
-    list_editable = ["order"]  # noqa: RUF012
-    list_filter = [SkillLevelFilter]  # noqa: RUF012
-    search_fields = ["name"]  # noqa: RUF012
+    list_display = ["name", "percentage", "level", "order"]
+    list_editable = ["order"]
+    list_filter = [SkillLevelFilter]
+    search_fields = ["name"]
     list_per_page = 25
     save_on_top = True
 
@@ -491,7 +491,7 @@ class ProjectImageInline(admin.TabularInline):
     verbose_name_plural = "Images"
 
     class Media:
-        css = {"all": ("css/admin_project_images.css",)}  # noqa: RUF012
+        css = {"all": ("css/admin_project_images.css",)}
 
     IMG_STYLE = (
         "width: 120px; height: 68px; object-fit: cover; "
@@ -538,14 +538,14 @@ class ProjectAdmin(admin.ModelAdmin):
     """Admin for Project model"""
 
     form = ProjectAdminForm
-    inlines = [ProjectImageInline]  # noqa: RUF012
+    inlines = [ProjectImageInline]
 
     class Media:
         js = ("js/admin_thumbnail.js", "js/admin_project_desc.js")
 
-    list_display = ["title", "date_range", "cover", "image_count", "order"]  # noqa: RUF012
-    list_editable = ["order"]  # noqa: RUF012
-    list_filter = ["is_current"]  # noqa: RUF012
+    list_display = ["title", "date_range", "cover", "image_count", "order"]
+    list_editable = ["order"]
+    list_filter = ["is_current"]
     readonly_fields = ("created_at",)
     fieldsets = (
         (
@@ -564,7 +564,7 @@ class ProjectAdmin(admin.ModelAdmin):
         ("Technical", {"fields": ("technologies",)}),
         ("Meta", {"fields": ("order", "created_at")}),
     )
-    search_fields = ["title", "description", "technologies"]  # noqa: RUF012
+    search_fields = ["title", "description", "technologies"]
     list_per_page = 25
     save_on_top = True
 
@@ -603,10 +603,10 @@ class ProjectAdmin(admin.ModelAdmin):
 class LogEntryAdmin(admin.ModelAdmin):
     change_list_template = "admin/logentry_change_list.html"
     date_hierarchy = "action_time"
-    list_display = ["action_time", "user", "content_type", "object_repr", "action_flag"]  # noqa: RUF012
-    list_filter = ["action_flag", "user", "content_type"]  # noqa: RUF012
-    search_fields = ["object_repr", "change_message", "user__username"]  # noqa: RUF012
-    ordering = ["-action_time"]  # noqa: RUF012
+    list_display = ["action_time", "user", "content_type", "object_repr", "action_flag"]
+    list_filter = ["action_flag", "user", "content_type"]
+    search_fields = ["object_repr", "change_message", "user__username"]
+    ordering = ["-action_time"]
 
     def has_add_permission(self, request):
         return False
@@ -699,14 +699,14 @@ class ExperienceAdmin(admin.ModelAdmin):
     """
 
     class Media:
-        css = {"all": ("css/admin_experience.css",)}  # noqa: RUF012
+        css = {"all": ("css/admin_experience.css",)}
 
-    list_display = ["company", "logo", "entry_type", "order"]  # noqa: RUF012
-    list_editable = ["order"]  # noqa: RUF012
-    search_fields = ["company"]  # noqa: RUF012
+    list_display = ["company", "logo", "entry_type", "order"]
+    list_editable = ["order"]
+    search_fields = ["company"]
     list_per_page = 25
     save_on_top = True
-    inlines = [ExperienceRoleInline]  # noqa: RUF012
+    inlines = [ExperienceRoleInline]
     fieldsets = (
         (
             "Company",

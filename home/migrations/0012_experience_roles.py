@@ -5,11 +5,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0011_experience_url_worktype"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.AlterField(
             model_name="experience",
             name="position",

@@ -4,11 +4,11 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0026_feedback"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.DeleteModel(
             name="Feedback",
         ),

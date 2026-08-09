@@ -4,11 +4,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0009_blog_reading_time_minutes"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.CreateModel(
             name="Experience",
             fields=[

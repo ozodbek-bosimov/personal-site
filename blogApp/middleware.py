@@ -150,7 +150,7 @@ class AdminSessionTimeoutMiddleware:
         try:
             call_command("clearsessions")
             cache.set(self.SESSION_CLEANUP_LAST_RUN_KEY, now_ts, timeout=None)
-        except Exception:  # noqa: BLE001, S110
+        except Exception:
             # Silent fail to not interrupt admin experience
             pass
 

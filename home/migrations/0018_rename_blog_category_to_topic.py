@@ -2,11 +2,11 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0017_alter_blog_category"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.RenameField(
             model_name="blog",
             old_name="category",

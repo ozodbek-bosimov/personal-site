@@ -5,11 +5,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0022_project_timeline_fields"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.CreateModel(
             name="ProjectImage",
             fields=[

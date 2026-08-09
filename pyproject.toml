@@ -1,0 +1,17 @@
+[tool.ruff]
+target-version = "py313"
+
+[tool.ruff.lint]
+ignore = [
+    "RUF012",  # Mutable class attributes (standard in Django models/admin ordering, choices)
+    "BLE001",  # Blind exception catching in file cleanup hooks
+    "S110",    # try-except-pass
+    "DTZ006",  # datetime.fromtimestamp without tz
+    "SIM117",  # Nested with statements
+    "SIM102",  # Nested if statements
+    "N999",    # CamelCase package name (blogApp)
+    "I001",    # Unsorted imports
+]
+exclude = [
+    "**/migrations/*",
+]

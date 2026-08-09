@@ -17,7 +17,7 @@ class StaticViewSitemap(Sitemap):
 
     # Per-page hints. Google treats these as advisory, but accurate values
     # never hurt and help distinguish primary pages from secondary ones.
-    _PAGES = {  # noqa: RUF012
+    _PAGES = {
         "home": (1.0, "weekly"),
         "blog": (0.9, "daily"),
         "projects": (0.7, "monthly"),

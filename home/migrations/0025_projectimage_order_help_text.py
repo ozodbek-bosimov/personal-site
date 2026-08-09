@@ -4,11 +4,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0024_merge_project_thumbnail_into_gallery"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.AlterField(
             model_name="projectimage",
             name="order",

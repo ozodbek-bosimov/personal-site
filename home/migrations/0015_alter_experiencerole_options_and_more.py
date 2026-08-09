@@ -4,11 +4,11 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-    dependencies = [  # noqa: RUF012
+    dependencies = [
         ("home", "0014_experience_company_logo_experience_company_logo_url"),
     ]
 
-    operations = [  # noqa: RUF012
+    operations = [
         migrations.AlterModelOptions(
             name="experiencerole",
             options={
