@@ -69,47 +69,23 @@
         console.error("Lazy iframe error:", e);
     }
 
-    /* ── X card media fade-in ──────────────────────────────────── */
-    // Card media starts at opacity 0 (only under @media (scripting:
-    // enabled)) and fades in once its bytes arrive, instead of
-    // popping against the placeholder well. Cached images get the
-    // class immediately.
-    function runXCardImages() {
-      document.querySelectorAll(".x-embed__media img").forEach(function (img) {
-        if (img._xFadeBound) return;
-        img._xFadeBound = true;
-        if (img.complete && img.naturalWidth > 0) {
-          img.classList.add("is-loaded");
-        } else {
-          img.addEventListener("load", function () {
-            img.classList.add("is-loaded");
-          });
-        }
-      });
-    }
-    try {
-      runXCardImages();
-    } catch (e) {
-      console.error("X card image error:", e);
-    }
-
     /* ── CKEditor / Bare Links Embeds Processing ───────────────────── */
     function processEmbeds() {
       const content = document.querySelector('.blog-content');
       if (!content) return;
 
-      // Helper: create a Twitter/X embed using iframe (Robust for HTMX)
+      // Twitter/X embed — uses X's official widgets.js. widgets.js dynamically
+      // sizes the tweet card to its exact content height (including videos/media)
+      // and updates layout when media finishes loading.
       function makeTwitterEmbed(tweetId) {
-        const iframe = document.createElement('iframe');
-        iframe.src = `https://platform.twitter.com/embed/Tweet.html?id=${tweetId}&theme=dark`;
-        iframe.className = "embed-responsive embed-responsive--twitter";
-        iframe.setAttribute('frameborder', '0');
-        iframe.setAttribute('scrolling', 'yes'); // Allows scrolling if content is taller
-        iframe.setAttribute('allowtransparency', 'true');
-        iframe.setAttribute('allowfullscreen', 'true');
-        // Force dark mode color-scheme on the iframe itself to prevent white flashes
-        iframe.style.colorScheme = 'dark';
-        return iframe;
+        const bq = document.createElement('blockquote');
+        bq.className = 'twitter-tweet';
+        bq.setAttribute('data-theme', 'dark');
+        bq.setAttribute('data-dnt', 'true');
+        const a = document.createElement('a');
+        a.href = `https://twitter.com/x/status/${tweetId}`;
+        bq.appendChild(a);
+        return bq;
       }
 
       // Helper: create an Instagram embed iframe
@@ -125,6 +101,8 @@
         return iframe;
       }
 
+      let hasTwitterEmbed = false;
+
       // 1. Process <oembed> tags (Twitter, Instagram)
       content.querySelectorAll('oembed').forEach(oembed => {
         let url = oembed.getAttribute('url') || '';
@@ -136,6 +114,7 @@
           const match = url.match(/\/status\/(\d+)/);
           if (match && match[1]) {
             figure.parentNode.replaceChild(makeTwitterEmbed(match[1]), figure);
+            hasTwitterEmbed = true;
           }
         } else if (url.includes('instagram.com')) {
           const match = url.match(/\/(?:p|reel)\/([^\/?#&]+)/);
@@ -179,9 +158,23 @@
           const match = normalizedUrl.match(/\/status\/(\d+)/);
           if (match && match[1]) {
             parent.parentNode.replaceChild(makeTwitterEmbed(match[1]), parent);
+            hasTwitterEmbed = true;
           }
         }
       });
+
+      // Load/render X widgets if twitter embeds were found
+      if (hasTwitterEmbed || content.querySelector('blockquote.twitter-tweet')) {
+        if (window.twttr && window.twttr.widgets) {
+          window.twttr.widgets.load(content);
+        } else if (!document.getElementById('twitter-wjs')) {
+          const script = document.createElement('script');
+          script.id = 'twitter-wjs';
+          script.src = 'https://platform.twitter.com/widgets.js';
+          script.async = true;
+          document.head.appendChild(script);
+        }
+      }
     }
 
     try {
@@ -201,21 +194,24 @@
         //   2. legacy rpc:  { method: "twttr.private.resize", params: [{ height }] }
         //   3. current rpc: { "twttr.embed": { method: "twttr.private.resize",
         //                                      params: [{ height }] } }
-        if (e.origin === 'https://platform.twitter.com' && e.data) {
+        if (e.origin && (e.origin === 'https://platform.twitter.com' || e.origin.endsWith('.twitter.com') || e.origin.endsWith('.x.com')) && e.data) {
           var data = e.data;
           if (typeof data === 'string') {
             try { data = JSON.parse(data); } catch (err) { return; }
           }
           var height = null;
+          var tweetId = null;
           if (data['twttr.private.resize']) {
             var arr = data['twttr.private.resize'];
             if (Array.isArray(arr) && arr[0] && arr[0].height) {
               height = arr[0].height;
+              if (arr[0].data && arr[0].data.tweet_id) tweetId = arr[0].data.tweet_id;
             }
           } else if (data.method === 'twttr.private.resize' && data.params) {
             var arr2 = data.params;
             if (Array.isArray(arr2) && arr2[0] && arr2[0].height) {
               height = arr2[0].height;
+              if (arr2[0].data && arr2[0].data.tweet_id) tweetId = arr2[0].data.tweet_id;
             }
           } else if (data.twttr && data.twttr.embed) {
             var embed = data.twttr.embed;
@@ -223,16 +219,26 @@
               var arr3 = embed.params;
               if (arr3[0] && arr3[0].height) {
                 height = arr3[0].height;
+                if (arr3[0].data && arr3[0].data.tweet_id) tweetId = arr3[0].data.tweet_id;
               }
             }
           }
           if (height && height > 50) {
-            document.querySelectorAll('.embed-responsive--twitter').forEach(function (iframe) {
+            var iframes = document.querySelectorAll('.embed-responsive--twitter');
+            iframes.forEach(function (iframe) {
+              var isMatched = false;
               try {
-                if (iframe.contentWindow === e.source) {
-                  iframe.style.height = height + 'px';
-                }
+                if (iframe.contentWindow === e.source) isMatched = true;
               } catch (err) { }
+              if (tweetId && (iframe.src || '').indexOf('id=' + tweetId) !== -1) isMatched = true;
+              // Fallback: If single twitter embed on page, it must be this one
+              if (iframes.length === 1) isMatched = true;
+
+              if (isMatched) {
+                iframe.style.setProperty('height', height + 'px', 'important');
+                iframe.style.setProperty('min-height', height + 'px', 'important');
+                iframe.dataset.resized = '1';
+              }
             });
           }
         }
