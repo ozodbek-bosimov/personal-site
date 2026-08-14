@@ -1,5 +1,5 @@
-import ipaddress
 import hashlib
+import ipaddress
 import json
 import logging
 import operator
@@ -198,7 +198,7 @@ def blog(request):
     paginator = Paginator(all_blogs, 5)
     page = request.GET.get("page")
     blogs = paginator.get_page(page)
-    context = {"blogs": blogs}
+    context = {"blogs": blogs, "query": ""}
     return render(request, "blog.html", context)
 
 
@@ -219,7 +219,7 @@ def topic(request, topic):
         return render(
             request,
             "topic.html",
-            {"message": message, "topic": topic},
+            {"message": message, "topic": topic, "query": ""},
             status=404,
         )
 
@@ -229,7 +229,7 @@ def topic(request, topic):
     return render(
         request,
         "topic.html",
-        {"topic": topic, "topic_posts": topic_posts},
+        {"topic": topic, "topic_posts": topic_posts, "query": ""},
     )
 
 

@@ -2,16 +2,32 @@
 target-version = "py313"
 
 [tool.ruff.lint]
+select = [
+    "E4",   # Pycodestyle: import, statement, expression issues
+    "E7",   # Pycodestyle: statement issues (e.g. bare except)
+    "E9",   # Pycodestyle: runtime errors
+    "F",    # Pyflakes: unused imports, undefined names
+    "I001", # Isort: import sorting
+    "BLE001",  # Blind exception catching
+    "S110",    # try-except-pass
+]
 ignore = [
     "RUF012",  # Mutable class attributes (standard in Django models/admin ordering, choices)
-    "BLE001",  # Blind exception catching in file cleanup hooks
-    "S110",    # try-except-pass
     "DTZ006",  # datetime.fromtimestamp without tz
     "SIM117",  # Nested with statements
     "SIM102",  # Nested if statements
     "N999",    # CamelCase package name (blogApp)
-    "I001",    # Unsorted imports
 ]
 exclude = [
     "**/migrations/*",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# Blind exception catching (BLE001) and try-except-pass (S110) are legitimate
+# in these files: file cleanup signals must never break a save/delete,
+# imaging helpers fall back to the original file, and the proxy/middleware
+# swallow transport errors with logging.
+"home/models.py" = ["BLE001", "S110"]
+"home/imaging.py" = ["BLE001", "S110"]
+"home/views.py" = ["BLE001"]
+"blogApp/middleware.py" = ["BLE001", "S110"]

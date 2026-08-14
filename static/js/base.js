@@ -1,4 +1,21 @@
 function initApp(root = document) {
+  // ── Hover Reset (bfcache / tap residue) ───────────────────────────
+  // Touch browsers keep a sticky :hover highlight after a tap or a
+  // bfcache restore. Momentarily disabling pointer-events on <body>
+  // forces the browser to re-evaluate and clear those hover states.
+  // Removal is scheduled on the next animation frame AND backed by a
+  // timeout, so the class can never stick if requestAnimationFrame is
+  // throttled (e.g. the tab is in the background) — a stuck
+  // `no-hover-reset` would make the whole page unclickable.
+  function applyHoverReset() {
+    document.body.classList.add("no-hover-reset");
+    const clear = function () {
+      document.body.classList.remove("no-hover-reset");
+    };
+    requestAnimationFrame(clear);
+    setTimeout(clear, 120);
+  }
+
   // Back to Top Button
   const backToTopBtn = document.getElementById("back-to-top");
   if (backToTopBtn && !backToTopBtn.dataset.initialized) {
@@ -57,10 +74,7 @@ function initApp(root = document) {
       // highlight on touch screens. Clear it so the button does not stay
       // "lit" after the menu closes itself (e.g. on scroll).
       toggleButton.blur();
-      document.body.classList.add("no-hover-reset");
-      requestAnimationFrame(function () {
-        document.body.classList.remove("no-hover-reset");
-      });
+      applyHoverReset();
     }
 
     root.querySelectorAll(".mob-nav a").forEach((link) => {
@@ -242,10 +256,7 @@ function initApp(root = document) {
       if (document.activeElement && document.activeElement !== document.body) {
         document.activeElement.blur();
       }
-      document.body.classList.add("no-hover-reset");
-      requestAnimationFrame(function () {
-        document.body.classList.remove("no-hover-reset");
-      });
+      applyHoverReset();
     });
 
     var tappedEl = null;

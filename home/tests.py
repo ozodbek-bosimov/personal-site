@@ -26,7 +26,7 @@ from home.content_tools import (
 from home.context_processors import USED_TAGS_CACHE_KEY, used_tags
 from home.imaging import compress_to_webp
 from home.models import AboutMe, Blog
-from home.templatetags.blog_extras import lazy_iframes, reading_time
+from home.templatetags.blog_extras import highlight, lazy_iframes, reading_time
 
 
 @override_settings(
@@ -176,6 +176,28 @@ class TemplateTagTests(TestCase):
         self.assertIn(
             '<iframe src="https://open.spotify.com/embed/track/1"></iframe>', out
         )
+
+    def test_highlight_wraps_every_term_occurrence(self):
+        out = highlight("Learning Django with the Django ORM", "django")
+        self.assertEqual(
+            out,
+            "Learning <mark>Django</mark> with the <mark>Django</mark> ORM",
+        )
+
+    def test_highlight_matches_multiple_words_case_insensitively(self):
+        out = highlight("Django REST framework guide", "django rest")
+        self.assertEqual(out, "<mark>Django</mark> <mark>REST</mark> framework guide")
+
+    def test_highlight_escapes_html_before_matching(self):
+        out = highlight("Attack <script> & more", "attack")
+        self.assertEqual(out, "<mark>Attack</mark> &lt;script&gt; &amp; more")
+
+    def test_highlight_noop_without_query_or_value(self):
+        self.assertEqual(highlight("Hello world", ""), "Hello world")
+        self.assertEqual(highlight("Hello world", None), "Hello world")
+        self.assertEqual(highlight("Hello world", "   "), "Hello world")
+        self.assertEqual(highlight("", "django"), "")
+        self.assertIsNone(highlight(None, "django"))
 
 
 class ImageOptimizationTests(TestCase):
@@ -330,6 +352,12 @@ class ViewsSmokeTests(TestCase):
         self.assertTemplateUsed(resp, "topic.html")
         self.assertContains(resp, "No posts found in topic", status_code=404)
 
+    def test_topic_with_posts_returns_200(self):
+        resp = self.client.get(reverse("topic", kwargs={"topic": "django"}))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, "topic.html")
+        self.assertContains(resp, "Hello Django")
+
     def test_search_empty_query_shows_message(self):
         resp = self.client.get(reverse("search"))
         self.assertEqual(resp.status_code, 200)
@@ -342,6 +370,17 @@ class ViewsSmokeTests(TestCase):
         self.assertTemplateUsed(resp, "search.html")
         self.assertIn("results", resp.context)
         self.assertTrue(resp.context["results"].paginator.count >= 1)
+
+    def test_search_highlights_matching_terms_in_results(self):
+        resp = self.client.get(reverse("search"), {"q": "Django"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "<mark>Django</mark>")
+
+    def test_blog_list_has_no_highlight_without_query(self):
+        resp = self.client.get(reverse("blog"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Hello Django")
+        self.assertNotContains(resp, "<mark>")
 
     def test_search_rate_limit_returns_429_and_flag(self):
         url = reverse("search")

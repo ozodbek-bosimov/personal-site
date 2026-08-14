@@ -528,6 +528,14 @@
 
     if (typeof Prism !== "undefined") {
       try {
+        // HTMX head-swaps may re-execute the template's inline autoloader
+        // script before prism.min.js finishes loading, leaving languages_path
+        // unset. Re-apply it here (idempotent) so the autoloader always knows
+        // where to fetch language components before highlighting runs.
+        if (Prism.plugins && Prism.plugins.autoloader) {
+          Prism.plugins.autoloader.languages_path =
+            "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/";
+        }
         Prism.highlightAll();
       } catch (e) {
         console.error("Prism highlight error:", e);

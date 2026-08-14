@@ -2,6 +2,7 @@ import math
 import re
 
 from django import template
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
 register = template.Library()
@@ -21,6 +22,27 @@ def reading_time(content):
     # Average reading speed: 160 words per minute
     minutes = max(1, math.ceil(word_count / 160))
     return minutes
+
+
+@register.filter(name="highlight")
+def highlight(value, arg):
+    """Wrap occurrences of each whitespace-separated search term in <mark>.
+
+    Used by the search results so matching words in the post title and meta
+    stand out. Matching is case-insensitive, and the input is escaped before
+    matching, so the returned markup contains only safe text plus <mark> tags.
+    An empty or whitespace-only query returns the value unchanged, which is
+    what makes the filter safe to use on the shared blog-list card too.
+    """
+    if not value:
+        return value
+    query = (arg or "").strip()
+    terms = [re.escape(term) for term in query.split() if term]
+    if not terms:
+        return value
+    pattern = re.compile("(" + "|".join(terms) + ")", re.IGNORECASE)
+    escaped = escape(str(value))
+    return mark_safe(pattern.sub(r"<mark>\1</mark>", escaped))
 
 
 # Matches an entire <iframe ...>...</iframe> element (with optional closing tag)
