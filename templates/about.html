@@ -43,8 +43,6 @@
     rel="stylesheet"
     href="{% static 'css/about.css' %}?v={{ STATIC_ASSET_VERSION }}"
 />
-<link rel="preconnect" href="https://unpkg.com" crossorigin />
-<link rel="stylesheet" href="https://unpkg.com/github-calendar@2.3.4/dist/github-calendar-responsive.css"/>
 {% if about_me.bio|needs_content_tools_styles %}
 {% include 'partials/_content_tools_css.html' %}
 {% endif %}
@@ -471,7 +469,7 @@
                             <div id="github-cal-wrap" style="width: 96%; margin: 0 auto 0.25rem auto; display: flex; flex-direction: column; justify-content: flex-start; overflow: hidden;">
                                 <div id="github-cal-skeleton" class="skeleton-loader" style="width: 100%;"></div>
                                 <div id="github-calendar-container" class="calendar-shell">
-                                    <!-- Calendar injected by github-calendar library -->
+                                    <!-- Calendar injected from the internal /github-contributions/ proxy -->
                                 </div>
                             </div>
                         </div>
@@ -521,8 +519,7 @@
 {% include 'partials/_content_tools_js.html' %}
 {% endif %}
 
-<!-- GitHub Calendar Library + Stats (must be in content block so HTMX re-executes on every navigation) -->
-<script data-cfasync="false" src="https://unpkg.com/github-calendar@2.3.4/dist/github-calendar.min.js"></script>
+<!-- GitHub calendar + stats (must be in content block so HTMX re-executes on every navigation) -->
 {% if about_me %}
 <div id="about-config-data" 
      data-github="{{ about_me.github_url }}" 

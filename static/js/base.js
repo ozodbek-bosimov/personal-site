@@ -1,3 +1,16 @@
+// Resolve the current search modal from the document: HTMX history restores
+// re-create it from a snapshot, so a closure holding one reference would go
+// stale (the same bug class as the lightbox).
+function currentSearchModal() {
+  return document.querySelector(".searchModal") || null;
+}
+
+// Remember which button opened the modal so focus can be returned on close.
+// `var` (not `let`): htmx re-executes this script on every boosted swap, and
+// a top-level `let` would throw "already declared" on the second run, killing
+// the whole script.
+var searchOpener = null;
+
 function initApp(root = document) {
   // ── Hover Reset (bfcache / tap residue) ───────────────────────────
   // Touch browsers keep a sticky :hover highlight after a tap or a
@@ -17,9 +30,12 @@ function initApp(root = document) {
   }
 
   // Back to Top Button
+  // Init guards are JS-only properties (not data-* attributes): HTMX history
+  // snapshots serialize data attributes, so a restored page would carry the
+  // "initialized" mark while its listeners live on the pre-restore elements.
   const backToTopBtn = document.getElementById("back-to-top");
-  if (backToTopBtn && !backToTopBtn.dataset.initialized) {
-    backToTopBtn.dataset.initialized = "true";
+  if (backToTopBtn && !backToTopBtn._initialized) {
+    backToTopBtn._initialized = true;
     window.addEventListener(
       "scroll",
       function () {
@@ -46,8 +62,8 @@ function initApp(root = document) {
   const toggleButton = root.querySelector(".nav-btn");
   const navbarContent = root.querySelector(".mob-nav");
 
-  if (toggleButton && navbarContent && !toggleButton.dataset.initialized) {
-    toggleButton.dataset.initialized = "true";
+  if (toggleButton && navbarContent && !toggleButton._initialized) {
+    toggleButton._initialized = true;
     function toggleMobileMenu() {
       // translate-x-full is the hidden state, so this reads "was it closed?"
       const wasHidden = navbarContent.classList.contains("translate-x-full");
@@ -94,46 +110,50 @@ function initApp(root = document) {
   }
 
   // Search Modal
+  // HTMX history restores re-create the modal element, so every handler
+  // resolves the current element from the document instead of holding a
+  // stale reference.
   const searchBtns = root.querySelectorAll(".searchBtn, .searchBtn1");
-  const searchModal = root.querySelector(".searchModal") || document.querySelector(".searchModal");
+  const searchModal = currentSearchModal();
   const searchCloseBtn = searchModal?.querySelector(".searchCloseBtn");
-  const searchInput = searchModal?.querySelector(".searchInput");
-  const searchModalOverlay = searchModal?.querySelector(".searchModal-overlay");
-
-  // Remember which button opened the modal so focus can be returned on close.
-  let searchOpener = null;
 
   function showSearchModal() {
-    if (!searchModal) return;
+    const modal = currentSearchModal();
+    if (!modal) return;
+    // Remember which button opened the modal so focus can be returned on close.
     searchOpener = document.activeElement;
-    searchModal.style.display = "block";
+    modal.style.display = "block";
     document.body.classList.add("search-open");
+    const input = modal.querySelector(".searchInput");
     // Delay focus so the modal entry animation finishes first.
     // On mobile this prevents the keyboard from pushing the modal off-screen.
     setTimeout(() => {
-      if (searchInput) searchInput.focus({ preventScroll: true });
+      if (input) input.focus({ preventScroll: true });
     }, 320);
   }
 
   function hideSearchModal() {
-    if (searchModal) {
-      searchModal.style.display = "none";
+    const modal = currentSearchModal();
+    if (modal) {
+      modal.style.display = "none";
       document.body.classList.remove("search-open");
-      if (searchInput) searchInput.value = "";
+      const input = modal.querySelector(".searchInput");
+      if (input) input.value = "";
     }
     // Return focus to the element that opened the dialog, if it still exists.
     if (searchOpener && document.contains(searchOpener)) {
       searchOpener.focus();
-      searchOpener = null;
     }
+    searchOpener = null;
   }
 
   // Trap Tab / Shift+Tab inside the open dialog so keyboard focus cannot
   // escape the aria-modal container (Escape already closes it).
   function trapSearchFocus(event) {
-    if (!searchModal || searchModal.style.display !== "block") return;
+    const modal = currentSearchModal();
+    if (!modal || modal.style.display !== "block") return;
     if (event.key !== "Tab") return;
-    const focusables = searchModal.querySelectorAll(
+    const focusables = modal.querySelectorAll(
       'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
     );
     if (!focusables.length) return;
@@ -149,21 +169,23 @@ function initApp(root = document) {
   }
 
   function submitSearchForm(event) {
-    if (!searchInput) return;
-    const searchQuery = searchInput.value.trim();
+    const modal = currentSearchModal();
+    const input = modal && modal.querySelector(".searchInput");
+    if (!input) return;
+    const searchQuery = input.value.trim();
     if (!searchQuery) {
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      searchInput.classList.add("shake");
+      input.classList.add("shake");
       setTimeout(() => {
-        searchInput.classList.remove("shake");
+        input.classList.remove("shake");
       }, 500);
     }
   }
 
-  if (searchModal && !searchModal.dataset.initialized) {
-    searchModal.dataset.initialized = "true";
+  if (searchModal && !searchModal._initialized) {
+    searchModal._initialized = true;
     searchBtns.forEach((btn) => btn.addEventListener("click", showSearchModal));
 
     if (searchCloseBtn) {
@@ -174,15 +196,25 @@ function initApp(root = document) {
     if (searchForm) {
       searchForm.addEventListener("submit", submitSearchForm);
     }
+  }
 
+  // Window-level listeners are attached exactly once per page load — initApp
+  // re-runs after every HTMX history restore, and each run would otherwise
+  // stack another Escape / overlay-click / focus-trap handler. They resolve
+  // the current modal from the document, so one binding serves every restore.
+  if (!window.__searchModalGlobalListeners) {
+    window.__searchModalGlobalListeners = true;
     window.addEventListener("click", (event) => {
-      if (event.target === searchModal || event.target === searchModalOverlay) {
+      const modal = currentSearchModal();
+      const overlay = modal && modal.querySelector(".searchModal-overlay");
+      if (event.target === modal || event.target === overlay) {
         hideSearchModal();
       }
     });
 
     window.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && searchModal.style.display === "block") {
+      const modal = currentSearchModal();
+      if (event.key === "Escape" && modal && modal.style.display === "block") {
         hideSearchModal();
       }
     });
@@ -322,11 +354,43 @@ initApp(document);
 // Re-initialize after HTMX swaps in new content
 if (!window._baseListenerAdded) {
   window._baseListenerAdded = true;
+
+  // Regular boosted navigation: the server HTML is swapped in and scripts
+  // re-run, but initApp still needs re-invoking for the fresh nodes.
   document.addEventListener("htmx:afterSettle", function(event) {
     if (document.body) {
       document.body.classList.remove("image-lightbox-open", "search-open");
     }
     initApp(event.target);
+  });
+
+  // Browser back/forward: htmx 2.0 restores the page from its history cache
+  // and fires ONLY htmx:historyRestore (htmx:afterSettle and htmx:restored
+  // do not fire here, and external scripts are not re-executed), so every
+  // interaction bound on the pre-restore elements would be gone. Re-run
+  // initApp against the restored DOM — the _initialized flags are JS-only
+  // properties, so they never survive the snapshot round-trip and nothing
+  // is skipped. Also reset transient UI state that got frozen into the
+  // snapshot (open modals, sticky hover classes).
+  document.addEventListener("htmx:historyRestore", function () {
+    if (document.body) {
+      document.body.classList.remove("image-lightbox-open", "search-open", "no-hover-reset");
+    }
+    var searchModalEl = document.querySelector(".searchModal");
+    if (searchModalEl && searchModalEl.style.display === "block") {
+      searchModalEl.style.display = "none";
+      var searchInputEl = searchModalEl.querySelector(".searchInput");
+      if (searchInputEl) searchInputEl.value = "";
+    }
+    var mobNavEl = document.querySelector(".mob-nav");
+    if (mobNavEl) {
+      mobNavEl.classList.add("translate-x-full", "opacity-0");
+      var navToggleEl = document.querySelector(".nav-btn");
+      if (navToggleEl) navToggleEl.setAttribute("aria-expanded", "false");
+    }
+    var backToTopEl = document.getElementById("back-to-top");
+    if (backToTopEl) backToTopEl.classList.remove("visible", "fly-animation");
+    initApp(document);
   });
 }
 

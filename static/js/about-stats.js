@@ -170,23 +170,8 @@ function initAboutStats() {
       if (skel) skel.style.display = "none";
     };
 
-    const initGitHubCalendarWithRetry = (attempt = 0) => {
+    const initGitHubCalendar = () => {
       if (!container) return;
-
-      if (typeof GitHubCalendar === "undefined") {
-        if (attempt < 20) {
-          setTimeout(() => initGitHubCalendarWithRetry(attempt + 1), 100);
-        } else {
-          revealCalendarFn = () => {
-            if (container.dataset.revealed) return;
-            container.dataset.revealed = "true";
-            tryFallbackCalendar();
-          };
-          calReadyToReveal = true;
-          tryRevealCal();
-        }
-        return;
-      }
 
       // Clear flags from any previous visit so the calendar re-inits cleanly
       delete container.dataset.initialized;
@@ -260,24 +245,28 @@ function initAboutStats() {
         lastCell.style.boxSizing    = "border-box";
         lastCell.style.backgroundColor = "transparent";
 
-        const graphContainer = document.querySelector("#github-calendar-container .calendar-graph");
-        if (graphContainer && !graphContainer.querySelector(".calendar-range-labels")) {
-          const firstDate = validCells[0].getAttribute("data-date").replace(/-/g, ".");
-          const lastDate  = lastCell.getAttribute("data-date").replace(/-/g, ".");
+        // Date-range row, LeetCode-heatmap style: one small date at each
+        // corner, tight against the grid. Appended to the container, NOT the
+        // graph wrapper — the wrapper clips its overflow (overflow-y: hidden
+        // in about.css), which cut the row off at the bottom edge once the
+        // fit-shrunk grid re-measured. The container is overflow-visible
+        // after reveal, so the row can never be clipped.
+        if (!container.querySelector(".calendar-range-labels")) {
+          const fmtDate = (d) => {
+            const parts = d.split("-");
+            return parts[0] + "." + parseInt(parts[1], 10) + "." + parseInt(parts[2], 10);
+          };
+          const firstDate = fmtDate(validCells[0].getAttribute("data-date"));
+          const lastDate  = fmtDate(lastCell.getAttribute("data-date"));
           const datesDiv  = document.createElement("div");
           datesDiv.className = "calendar-range-labels";
-          Object.assign(datesDiv.style, {
-            display: "flex", justifyContent: "space-between",
-            fontSize: "0.75rem", color: "#f8fafc",
-            marginTop: "0.4rem", fontFamily: "monospace, sans-serif",
-          });
           const firstSpan = document.createElement("span");
           firstSpan.textContent = firstDate;
           const lastSpan = document.createElement("span");
           lastSpan.textContent = lastDate;
           datesDiv.appendChild(firstSpan);
           datesDiv.appendChild(lastSpan);
-          graphContainer.appendChild(datesDiv);
+          container.appendChild(datesDiv);
         }
 
         calReadyToReveal = true;
@@ -289,6 +278,28 @@ function initAboutStats() {
           fitGithubCalendar();
           requestAnimationFrame(fitGithubCalendar);
         });
+
+        // The table's natural width depends on the loaded fonts (month/day
+        // labels), which arrive asynchronously. If they finish after this
+        // first fit, the scale is stale and the grid's right edge gets
+        // clipped — re-fit once fonts are ready and once the window load
+        // settles.
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(function () {
+            fitGithubCalendar();
+            requestAnimationFrame(fitGithubCalendar);
+          });
+        }
+        if (document.readyState !== "complete") {
+          window.addEventListener(
+            "load",
+            function onLoadRefit() {
+              fitGithubCalendar();
+              requestAnimationFrame(fitGithubCalendar);
+            },
+            { once: true },
+          );
+        }
 
         if (!container.dataset.fitBound) {
           container.dataset.fitBound = "true";
@@ -315,32 +326,26 @@ function initAboutStats() {
         }
       };
 
-      const initResult = GitHubCalendar("#github-calendar-container", ghUsername, {
-        responsive: true,
-        tooltips: true,
-        proxy: function (username) {
-          return fetch(`https://github-calendar.js.org/${username}`)
-            .then((r) => { if (!r.ok) throw new Error("Primary proxy failed"); return r.text(); })
-            .catch(() =>
-              fetch(`/github-contributions/`).then((r) => {
-                if (!r.ok) throw new Error("Internal proxy failed");
-                return r.text();
-              })
-            );
-        },
-      });
-
-      if (initResult && typeof initResult.then === "function") {
-        initResult.then(() => waitForCalendar()).catch((e) => {
+      // Fetch the calendar markup straight from the internal proxy
+      // (home.views.github_calendar_proxy). It fetches GitHub server-side
+      // and is same-origin, so it works where the browser is blocked.
+      fetch(`/github-contributions/`)
+        .then((r) => {
+          if (!r.ok) throw new Error("Internal proxy failed");
+          return r.text();
+        })
+        .then((html) => {
+          if (!container) return;
+          container.innerHTML = html;
+          waitForCalendar();
+        })
+        .catch((e) => {
           console.error("GitHub Calendar error:", e);
           tryFallbackCalendar();
         });
-      } else {
-        waitForCalendar();
-      }
     };
 
-    initGitHubCalendarWithRetry();
+    initGitHubCalendar();
     startTurn(0);
   };
 
@@ -413,16 +418,14 @@ setTimeout(initAboutStats, 10);
 
 // Set up HTMX navigation listeners (only once)
 if (!window._aboutStatsListenerAdded) {
-  document.addEventListener("htmx:afterSettle", function () {
+  // htmx 2.0 fires ONLY htmx:historyRestore on back/forward restores.
+  function handleNav() {
     if (window.location.pathname.includes('/about')) {
       initAboutStats();
     }
-  });
-  document.addEventListener("htmx:restored", function () {
-    if (window.location.pathname.includes('/about')) {
-      initAboutStats();
-    }
-  });
+  }
+  document.addEventListener("htmx:afterSettle", handleNav);
+  document.addEventListener("htmx:historyRestore", handleNav);
   window._aboutStatsListenerAdded = true;
 }
 })();

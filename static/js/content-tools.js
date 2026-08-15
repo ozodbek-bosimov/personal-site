@@ -31,10 +31,10 @@
    ─────────
      DOMContentLoaded   → init
      htmx:afterSettle   → init (fresh server HTML; new nodes only)
-     htmx:restored      → init + rehydrate
+     htmx:historyRestore → rehydrate (back/forward cache restore)
 
-   Why htmx:restored is nearly free
-   ────────────────────────────────
+   Why restore is nearly free
+   ──────────────────────────
    htmx caches history entries as HTML, so a restored page already contains
    the controls we injected and already carries data-tk-ready — but none of
    the JavaScript state that was behind them.
@@ -644,7 +644,8 @@
   // Restored from htmx's history cache. The snapshot already contains the
   // controls we injected, and every handler reads its state from the DOM,
   // so the only work is re-creating observers for the tools that own one.
-  document.addEventListener("htmx:restored", function (ev) {
+  // htmx 2.0 fires ONLY htmx:historyRestore on back/forward restores.
+  document.addEventListener("htmx:historyRestore", function (ev) {
     var root = (ev && ev.target) || document;
     init(root);
     rehydrate(root);

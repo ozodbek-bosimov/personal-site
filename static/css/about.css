@@ -744,6 +744,80 @@
     padding-right: 0 !important;
 }
 
+/* ── New GitHub table markup: hide GitHub chrome & fix label placement ──
+   The proxy injects GitHub's own contributions HTML, which assumes GitHub's
+   stylesheet. Without it, the "813 contributions in the last year" heading,
+   the year-list link and the absolutely-positioned month/day labels render
+   misplaced or clipped (labels overlap the grid, the heading is redundant
+   with the stats card above). */
+#github-calendar-container #js-contribution-activity-description,
+#github-calendar-container a[href="#contributions-year-list"],
+#github-calendar-container .js-year-link {
+    display: none !important;
+}
+
+/* Don't let the inner scroll wrapper show a bar while the JS fit hasn't
+   run yet (fonts load asynchronously and widen the table). */
+#github-calendar-container [style*="overflow-x: auto"] {
+    overflow-x: hidden !important;
+}
+
+#github-calendar-container .ContributionCalendar-label span[aria-hidden="true"] {
+    /* NB: no clip-path override here — GitHub's inline clip-path: Circle(0)
+       deliberately hides the Sun/Tue/Thu/Sat labels so only Mon/Wed/Fri
+       show, like on github.com. */
+    position: absolute !important;
+    left: 0.3rem !important;
+    font-size: 0.72rem !important;
+    line-height: 1 !important;
+    color: var(--text-muted) !important;
+    white-space: nowrap !important;
+    pointer-events: none !important;
+}
+
+/* Month labels: center vertically inside their <thead> strip. */
+#github-calendar-container thead .ContributionCalendar-label span[aria-hidden="true"] {
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+}
+
+/* Day labels: center in their row instead of GitHub's inline bottom:-4px,
+   which made them overlap the cells below. */
+#github-calendar-container tbody .ContributionCalendar-label span[aria-hidden="true"] {
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+}
+
+/* Breathing room between the labels and the grid. The grid is JS-scaled to
+   ~62%, so gaps must be sized pre-scale: a taller thead strip lifts the
+   month labels off the first cell row, and extra right padding on the day
+   cells widens the label column so "Mon/Wed/Fri" no longer touches the
+   first week column. */
+#github-calendar-container thead tr {
+    height: 1.5rem !important;
+}
+
+#github-calendar-container tbody .ContributionCalendar-label {
+    padding-right: 2rem !important;
+}
+
+/* Date range row under the grid — LeetCode-heatmap style: small, muted,
+   one date at each corner, tight against the grid. Lives outside the
+   overflow-clipping graph wrapper (appended to the container). Uses the
+   same Poppins font as the LeetCode card (font=Poppins) and the site. */
+#github-calendar-container .calendar-range-labels {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 0.6rem;
+    line-height: 1;
+    color: #94a3b8;
+    font-family: "Poppins", ui-sans-serif, system-ui, sans-serif;
+    margin-top: 0.15rem;
+}
+
 #github-calendar-container {
     opacity: 0;
     height: 0;

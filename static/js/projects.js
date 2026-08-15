@@ -145,16 +145,16 @@
   setTimeout(debouncedSetupAll, 10);
 
   if (!window._projectsListenerAdded) {
-    document.addEventListener("htmx:afterSettle", function () {
+    // htmx 2.0 fires ONLY htmx:historyRestore on back/forward restores
+    // (htmx:restored needs [hx-trigger="restored"] and afterSettle never
+    // fires there), so it must be listened to explicitly.
+    function handleNav() {
       if (window.location.pathname.includes('/projects')) {
         debouncedSetupAll();
       }
-    });
-    document.addEventListener("htmx:restored", function () {
-      if (window.location.pathname.includes('/projects')) {
-        debouncedSetupAll();
-      }
-    });
+    }
+    document.addEventListener("htmx:afterSettle", handleNav);
+    document.addEventListener("htmx:historyRestore", handleNav);
     window._projectsListenerAdded = true;
   }
 
@@ -201,7 +201,10 @@
   }
 
   function setupGallery(root) {
-    if (root.dataset.galleryReady === "1") return;
+    // JS-only flag (not data-*): data attributes are serialized into HTMX
+    // history snapshots, so a restored page would carry the "ready" mark
+    // while its listeners live on the pre-restore elements.
+    if (root._galleryReady) return;
 
     var viewport = root.querySelector("[data-gallery-viewport]");
     if (!viewport) return;
@@ -218,7 +221,7 @@
     var nextBtn = root.querySelector("[data-gallery-next]");
     var live = root.querySelector("[data-gallery-live]");
 
-    root.dataset.galleryReady = "1";
+    root._galleryReady = true;
 
     var total = slides.length;
     var current = 0;
@@ -436,8 +439,9 @@
   setupAllGalleries();
 
   if (!window._projectGalleryListenerAdded) {
+    // htmx 2.0 fires ONLY htmx:historyRestore on back/forward restores.
     document.addEventListener("htmx:afterSettle", setupAllGalleries);
-    document.addEventListener("htmx:restored", setupAllGalleries);
+    document.addEventListener("htmx:historyRestore", setupAllGalleries);
     window._projectGalleryListenerAdded = true;
   }
 })();

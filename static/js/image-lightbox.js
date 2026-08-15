@@ -28,13 +28,23 @@
     return (figureCaption && figureCaption.textContent.trim()) || image.alt || "Image preview";
   }
 
-  function ensureLightbox() {
-    if (lightbox && document.body.contains(lightbox)) return;
+  // HTMX history restore rebuilds the page from a snapshot, so the lightbox
+  // element (and the closure variables pointing at it) can become stale.
+  // Always resolve the current element from the document instead.
+  function currentLightbox() {
+    return document.querySelector(".image-lightbox") || null;
+  }
 
-    if (lightbox && !document.body.contains(lightbox)) {
-      lightbox = null;
-      preview = null;
-      caption = null;
+  function ensureLightbox() {
+    // Reuse whatever lightbox is currently in the document — either the one
+    // created here or one restored from the HTMX history cache. Otherwise a
+    // restored page would stack a second overlay on top of the first.
+    var existing = currentLightbox();
+    if (existing) {
+      lightbox = existing;
+      preview = lightbox.querySelector(".image-lightbox__image");
+      caption = lightbox.querySelector(".image-lightbox__caption");
+      return;
     }
 
     lightbox = document.createElement("div");
@@ -53,8 +63,8 @@
 
     preview = lightbox.querySelector(".image-lightbox__image");
     caption = lightbox.querySelector(".image-lightbox__caption");
-    // Clicking anywhere on the overlay dismisses it.
-    lightbox.addEventListener("click", close);
+    // Click-to-close is delegated on the document (see below) so it survives
+    // HTMX history restores that replace this element with a fresh clone.
   }
 
   function open(trigger) {
@@ -71,9 +81,16 @@
   }
 
   function close() {
-    if (!lightbox || lightbox.hidden) return;
-    lightbox.hidden = true;
-    preview.removeAttribute("src");
+    // Resolve the visible element from the document: after an HTMX history
+    // restore the closure variable may point at an element that was removed
+    // with the old page, while the visible lightbox is a fresh clone.
+    var el = currentLightbox();
+    if (!el || el.hidden) return;
+    lightbox = el;
+    el.hidden = true;
+    preview = el.querySelector(".image-lightbox__image");
+    caption = el.querySelector(".image-lightbox__caption");
+    if (preview) preview.removeAttribute("src");
     document.body.classList.remove("image-lightbox-open");
     if (activeTrigger && document.contains(activeTrigger)) activeTrigger.focus();
     activeTrigger = null;
@@ -95,6 +112,17 @@
     });
   }
 
+  // Close on any click inside the overlay. Delegated (like open) so it keeps
+  // working on lightbox elements restored from the HTMX history cache, which
+  // are fresh DOM nodes that never received a direct listener. Registered
+  // before the open listener below: clicking a trigger is never inside the
+  // lightbox, so the two can never both fire for the same target.
+  document.addEventListener("click", function (event) {
+    if (event.target.closest && event.target.closest(".image-lightbox")) {
+      close();
+    }
+  }, true);
+
   document.addEventListener("click", function (event) {
     var image = event.target.closest(selector);
     if (!image) return;
@@ -110,7 +138,8 @@
       close();
       return;
     }
-    if ((event.key === "Enter" || event.key === " ") && lightbox && !lightbox.hidden) return;
+    var lb = currentLightbox();
+    if ((event.key === "Enter" || event.key === " ") && lb && !lb.hidden) return;
     var image = event.target.closest && event.target.closest(selector);
     if (!image || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();
@@ -118,8 +147,45 @@
     open(image);
   }, true);
 
+  // While navigating, HTMX snapshots the current body into its history cache
+  // and restores it on back/forward. If the lightbox is open at snapshot time
+  // the restored overlay comes back with its close listener gone — clicking
+  // it would do nothing and Escape would unlock the page but leave the
+  // overlay visible. Drop the open lightbox from the DOM before the snapshot
+  // is taken so restored pages are always clean. htmx fires this event and
+  // caches the body synchronously in the same task, so removal is guaranteed
+  // to happen before the snapshot is read.
+  document.addEventListener("htmx:beforeHistorySave", function () {
+    var el = currentLightbox();
+    if (el && !el.hidden) {
+      el.remove();
+      lightbox = null;
+      preview = null;
+      caption = null;
+      activeTrigger = null;
+      document.body.classList.remove("image-lightbox-open");
+    }
+  });
+
+  // Safety net for snapshots that already contain a stale lightbox (taken
+  // before this handler existed). Adopt the restored element so the module
+  // state never points at a removed node, and remove it if the snapshot
+  // restored it open — the page must never come back with a stuck overlay.
+  function cleanRestoredLightbox() {
+    var els = document.querySelectorAll(".image-lightbox");
+    if (!els.length) return;
+    els.forEach(function (el) {
+      el.remove();
+    });
+    lightbox = null;
+    preview = null;
+    caption = null;
+    activeTrigger = null;
+    document.body.classList.remove("image-lightbox-open");
+  }
+  document.addEventListener("htmx:historyRestore", cleanRestoredLightbox);
+
   setupImages();
   document.addEventListener("htmx:afterSettle", setupImages);
-  document.addEventListener("htmx:restored", setupImages);
   document.addEventListener("htmx:historyRestore", setupImages);
 })();

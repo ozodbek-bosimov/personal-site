@@ -564,20 +564,16 @@
       }
     }
 
-    document.addEventListener("htmx:afterSettle", function () {
+    function handleNav() {
       if (window.location.pathname.includes('/blog/')) {
         debouncedInitBlogPost();
       } else {
         cleanupListeners();
       }
-    });
-    document.addEventListener("htmx:restored", function () {
-      if (window.location.pathname.includes('/blog/')) {
-        debouncedInitBlogPost();
-      } else {
-        cleanupListeners();
-      }
-    });
+    }
+    document.addEventListener("htmx:afterSettle", handleNav);
+    // htmx 2.0 fires ONLY htmx:historyRestore on back/forward restores.
+    document.addEventListener("htmx:historyRestore", handleNav);
     window._blogPostListenerAdded = true;
   }
 

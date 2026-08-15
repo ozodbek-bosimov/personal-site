@@ -363,7 +363,7 @@ def github_calendar_proxy(request):
     cached_html = cache.get(cache_key)
     if cached_html is not None:
         response = HttpResponse(cached_html, content_type="text/html")
-        response["Cache-Control"] = "public, max-age=300"
+        response["Cache-Control"] = "public, max-age=600"
         return response
 
     url = f"https://github.com/users/{username}/contributions"
@@ -371,10 +371,10 @@ def github_calendar_proxy(request):
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=5) as api_response:
             html_data = api_response.read().decode("utf-8")
-            # Cache for 5 minutes so a Cloudflare/browser miss doesn't hit GitHub every time.
-            cache.set(cache_key, html_data, 300)
+            # Cache for 10 minutes so a Cloudflare/browser miss doesn't hit GitHub every time.
+            cache.set(cache_key, html_data, 600)
             response = HttpResponse(html_data, content_type="text/html")
-            response["Cache-Control"] = "public, max-age=300"
+            response["Cache-Control"] = "public, max-age=600"
             return response
     except Exception:
         logger.warning(

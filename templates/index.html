@@ -411,6 +411,8 @@
         if (!window.__heroInitListenerAdded) {
             window.__heroInitListenerAdded = true;
             document.addEventListener("htmx:afterSettle", initHero);
+            // htmx 2.0 fires ONLY htmx:historyRestore on back/forward restores
+            document.addEventListener("htmx:historyRestore", initHero);
         }
     })();
 </script>

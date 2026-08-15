@@ -226,6 +226,8 @@
         if (!window.__navUpdateListenerAdded) {
             window.__navUpdateListenerAdded = true;
             document.addEventListener('htmx:afterSettle', updateNav);
+            // htmx 2.0 fires ONLY htmx:historyRestore on back/forward restores
+            document.addEventListener('htmx:historyRestore', updateNav);
         }
         
         if (!window.__htmxErrorListenerAdded) {
