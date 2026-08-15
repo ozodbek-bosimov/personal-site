@@ -346,6 +346,20 @@ function initApp(root = document) {
       { passive: true },
     );
   }
+
+  // ── Wide tables: never let a table get clipped ──────────────────
+  // CKEditor 5 tables arrive wrapped in <figure class="table">, which the
+  // CSS above scrolls. Bare tables (pasted HTML) would still be cut by
+  // .blog-content's overflow-x: hidden, so wrap them in a scrolling
+  // .table-wrap. Idempotent: already-wrapped tables are skipped.
+  var rootEl = root || document;
+  rootEl.querySelectorAll(".blog-content table").forEach(function (table) {
+    if (table.closest("figure.table") || table.closest(".table-wrap")) return;
+    var wrap = document.createElement("div");
+    wrap.className = "table-wrap";
+    table.parentNode.insertBefore(wrap, table);
+    wrap.appendChild(table);
+  });
 }
 
 // Run immediately — this script is loaded at the end of <body>, so DOM is ready

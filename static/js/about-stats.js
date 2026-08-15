@@ -55,12 +55,14 @@ function initAboutStats() {
     const container = document.getElementById("github-calendar-container");
     const calWrap   = document.getElementById("github-cal-wrap");
 
-    // Reserve space for the calendar so layout doesn't jump
+    // Reserve space for the calendar so layout doesn't jump. The +30px
+    // leaves room for the date-range label row below the fit-scaled grid,
+    // so it can never be clipped by the wrapper's overflow: hidden.
     const setCalReserve = () => {
       if (!calWrap) return;
       const w = calWrap.clientWidth;
       if (!w) return;
-      calWrap.style.height = Math.round(0.16 * w + 14) + "px";
+      calWrap.style.height = Math.round(0.16 * w + 30) + "px";
     };
     setCalReserve();
     // Clean up previous resize listener to prevent accumulation
@@ -229,6 +231,17 @@ function initAboutStats() {
         grid.style.transform    = `scale(${scale})`;
         grid.style.marginRight  = `-${naturalW - avail}px`;
         grid.style.marginBottom = `-${naturalH * (1 - scale)}px`;
+
+        // Scale the date-range labels with the grid so they stay
+        // proportional on narrow screens (LeetCode-style). Above 60%
+        // grid scale they keep their fixed 0.6rem, so desktop looks
+        // exactly as before.
+        var labels = container.querySelector(".calendar-range-labels");
+        if (labels) {
+          var labelScale = Math.min(1, Math.max(scale / 0.6, 0.42));
+          labels.style.fontSize  = 0.6 * labelScale + "rem";
+          labels.style.marginTop = 0.15 * labelScale + "rem";
+        }
       };
 
       const enhanceCalendar = () => {

@@ -1587,13 +1587,39 @@ p iframe {
 }
 
 /* ── Tables ─────────────────────────────────────────────────────── */
+/* CKEditor 5 wraps tables in <figure class="table">, and CKEditor's own
+   content CSS gives that figure display: table — so it grows to the
+   table's intrinsic width and, with .blog-content's overflow-x: hidden,
+   wide tables get clipped with no way to reach the rest. Keep the table
+   a real table (border-collapse needs table display) and make the
+   wrapper scroll horizontally instead. Bare tables pasted in as HTML
+   get the same treatment via a .table-wrap div added by base.js. */
+.blog-content figure.table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.blog-content .table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 1.5rem 0;
+}
+
 .blog-content table {
-    width: 100%;
+    display: table;
+    width: auto;
+    min-width: 100%;
     border-collapse: collapse;
     margin: 1.5rem 0;
     font-size: 0.95rem;
-    overflow-x: auto;
-    display: block;
+}
+
+.blog-content figure.table table,
+.blog-content .table-wrap table {
+    margin: 0;
 }
 
 .blog-content table th,
@@ -1626,6 +1652,14 @@ p iframe {
 
 
 /* ── Interactive Micro-Animations ────────────────────────────── */
+
+/* ── Social icon rows ───────────────────────────────────────────── */
+/* Up to seven brand icons (GitHub, LinkedIn, Telegram, LeetCode, X,
+   YouTube, Instagram) don't fit on one line on narrow phones. Wrap
+   onto extra lines instead of overflowing the viewport. */
+.social-row {
+    flex-wrap: wrap;
+}
 
 /* Controls should never show the long-press callout menu or accidentally
    select their own text on tap — both feel janky on touch devices.
