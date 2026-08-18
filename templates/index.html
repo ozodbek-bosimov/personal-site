@@ -384,13 +384,13 @@
                     el.textContent = phrase.substring(0, ci);
 
                     if (isDeleting) {
-                        ci--;
                         if (ci === 0) {
                             isDeleting = false;
                             pi = (pi + 1) % phrases.length;
                             window.__heroTypeTimeout = setTimeout(tick, 350);
                             return;
                         }
+                        ci--;
                         window.__heroTypeTimeout = setTimeout(tick, 30);
                     } else {
                         ci++;
